@@ -1,4 +1,5 @@
 ﻿using Base.Domain;
+using Base.Helpers;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Runtime.CompilerServices;
@@ -7,23 +8,31 @@ namespace App.Domain
 {
     public class Parcel: DomainEntityId
     {
+        [Required]
         [DisplayName("Parcel number")]
-        [RegularExpression(@"[A-Za-z][A-Za-z]\d\d\d\d\d\d[A-Za-z][A-Za-z]", ErrorMessage = "Parcel numbers must follow pattern: 'LLNNNNNNLL', where L-letter, N-digit")]
+        [RegularExpression(@"^[A-Za-z]{2}\d{6}[A-Za-z]{2}$", ErrorMessage = "Parcel numbers must follow pattern: 'LLNNNNNNLL', where L-letter, N-digit")]
         public string ParcelNumber { get; set; } = default!;
 
-        [MaxLength(100, ErrorMessage = "Name is too long")]
+        [Required]
+        [StringLength(100, ErrorMessage = "Name is too long")]
         public string RecipientName { get; set; } = default!;
 
-        [MinLength(2, ErrorMessage = "Country code is too short")]
-        [MaxLength(2, ErrorMessage = "Country code is too long")]
-        [RegularExpression(@"[A-Z]",
-         ErrorMessage = "Only uppercase Characters are allowed.")]
+        [Required]
+        [RegularExpression(@"^[A-Z]{2}$", ErrorMessage = "Destination country must be a 2-letter code, only uppercase characters are allowed!")]
         public string DestinationCountry { get; set;} = default!;
 
-        [RegularExpression(@"^\d+.\d{0,3}$", ErrorMessage = "Weight can't have more than 3 decimal places")]
+
+        [Required]
+        [Range(0, double.MaxValue, ErrorMessage = "Weight must be a positive number.")]
+        [DecimalPrecision(3, ErrorMessage = "Weight cannot have more than 3 decimal places.")]
         public decimal Weight { get; set; }
 
-        [RegularExpression(@"^\d+.\d{0,2}$", ErrorMessage = "Price can't have more than 2 decimal places")]
+        [Required]
+        [Range(0, double.MaxValue, ErrorMessage = "Price must be a positive number.")]
+        [DecimalPrecision(2, ErrorMessage = "Price cannot have more than 2 decimal places.")]
         public decimal Price { get; set; }
+
+        public Guid? BagWithParcelsId { get; set; }
+        public BagWithParcels? BagWithParcels { get; set; }
     }
 }

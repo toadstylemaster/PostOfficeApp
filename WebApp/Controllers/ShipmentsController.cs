@@ -1,9 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using App.BLL.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using App.Public.DTO.v1;
 using Asp.Versioning;
+using Base.Contracts.Domain;
+using AutoMapper;
 
 namespace WebApp.Controllers
 {
@@ -32,44 +33,26 @@ namespace WebApp.Controllers
         [ProducesResponseType(typeof(IEnumerable<App.Public.DTO.v1.Shipment>), 200)]
         [AllowAnonymous]
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Shipment>>> GetShipments()
+        public async Task<IEnumerable<Shipment>> GetShipments()
         {
-            var res = (await _bll.Shipments.AllAsync())
-                .Select(x => new App.Public.DTO.v1.Shipment()
-                {
-                    Id = x.Id,
-                    ShipmentNumber = x.ShipmentNumber,
-                    Airport = x.Airport,
-                    FlightNumber = x.FlightNumber,
-                    FlightDate = x.FlightDate,
-                    ListOfBags = x.ListOfBags ?? new List<string>()
-                })
-                .ToList();
-            return res;
+
+            return await _bll.Shipments.GetShipments();
         }
 
         // GET: api/Shipments/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Shipment>> GetShipment(Guid id)
         {
-            var shipment = await _bll.Shipments.FindAsync(id);
-            if (shipment == null)
+            try
+            {
+                var shipment = await _bll.Shipments.GetShipment(id);
+                return shipment;
+            }
+            catch(Exception ex) 
             {
                 return NotFound();
             }
 
-            var shipmentFromDb = new App.Public.DTO.v1.Shipment()
-            {
-                Id = shipment.Id,
-                ShipmentNumber = shipment.ShipmentNumber,
-                Airport = shipment.Airport,
-                FlightNumber = shipment.FlightNumber,
-                FlightDate = shipment.FlightDate,
-                ListOfBags = shipment.ListOfBags ?? new List<string>()
-            };
-
-
-            return shipmentFromDb;
         }
 
         // PUT: api/Shipments/5
@@ -80,6 +63,7 @@ namespace WebApp.Controllers
         /// <param name="id">Supply shipment entity id you want to change.</param>
         /// <param name="shipment">Supply shipment entity with updated values.</param>
         /// <returns>404 if shipment with given id is not found or 204, if changes were successful</returns>
+        [Route("~/{id}")]
         [HttpPut("{id}")]
         [Produces("application/json")]
         [Consumes("application/json")]
@@ -92,20 +76,46 @@ namespace WebApp.Controllers
                 return BadRequest();
             }
 
-            var shipmentFromDb = await _bll.Shipments.FindAsync(id);
-            if (shipmentFromDb == null)
+            try
             {
-                return NotFound();
+                await _bll.Shipments.PutShipment(id, shipment);
+            }catch(ArgumentException ex) 
+            {
+                return NotFound(ex.Message);    
+            }
+            catch (InvalidOperationException ex) 
+            {
+                return BadRequest(ex.Message);
             }
 
-            shipmentFromDb.ShipmentNumber = shipment.ShipmentNumber;
-            shipmentFromDb.Airport = shipment.Airport;
-            shipmentFromDb.FlightNumber = shipment.FlightNumber;
-            shipmentFromDb.FlightDate = shipment.FlightDate;
-            shipmentFromDb.ListOfBags = shipment.ListOfBags;
+            await _bll.SaveChangesAsync();
 
+            return NoContent();
+        }
 
-            _bll.Shipments.Update(shipmentFromDb);
+        // PUT: api/Shipments/5/true
+        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        /// <summary>
+        /// Update shipment entity with list of bags. Find entity via parameter id and update it with list of bag numbers
+        /// </summary>
+        /// <param name="id">Supply shipment entity id you want to change.</param>
+        /// <param name="isFinalized">Boolean if shipment should be finalized.</param>
+        /// <returns>404 if shipment with given id is not found or 204, if changes were successful</returns>
+        [Route("~/{id}/{isFinalized}")]
+        [HttpPut("{id}")]
+        [Produces("application/json")]
+        [Consumes("application/json")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> PutShipment(Guid id, bool isFinalized)
+        {
+            try
+            {
+                await _bll.Shipments.PutShipment(id, isFinalized);
+            }catch (ArgumentException ex)
+            {
+                return NotFound(ex.Message);
+            }
 
             await _bll.SaveChangesAsync();
 
@@ -125,17 +135,14 @@ namespace WebApp.Controllers
         [ProducesResponseType(StatusCodes.Status201Created)]
         public async Task<ActionResult<Shipment>> PostShipment(Shipment shipment)
         {
-            var shipmentFromDb = new App.BLL.DTO.Shipment()
+            try
             {
-                Id = shipment.Id,
-                ShipmentNumber = shipment.ShipmentNumber,
-                Airport = shipment.Airport,
-                FlightNumber = shipment.FlightNumber,
-                FlightDate = shipment.FlightDate,
-                ListOfBags = shipment.ListOfBags
-            };
-
-            _bll.Shipments.Add(shipmentFromDb);
+                _bll.Shipments.PostShipment(shipment);
+            }catch(ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            
             await _bll.SaveChangesAsync();
 
             return CreatedAtAction("GetShipment", 

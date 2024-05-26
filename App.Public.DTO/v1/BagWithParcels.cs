@@ -10,10 +10,8 @@ using System.Threading.Tasks;
 
 namespace App.Public.DTO.v1
 {
-    public class BagWithParcels : DomainEntityId, IBag
+    public class BagWithParcels : Bag
     {
-        public string BagNumber { get; set; } = default!;
-
         public ICollection<Parcel>? ListOfParcels { get; set; }
     }
 }

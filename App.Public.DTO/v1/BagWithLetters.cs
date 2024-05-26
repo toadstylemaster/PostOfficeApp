@@ -10,10 +10,8 @@ using System.Threading.Tasks;
 
 namespace App.Public.DTO.v1
 {
-    public class BagWithLetters : DomainEntityId, IBag
+    public class BagWithLetters : Bag
     {
-        public string BagNumber { get; set; } = default!;
-
         public int CountOfLetters { get; set; }
 
         public decimal Weight { get; set; }

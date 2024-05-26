@@ -24,5 +24,8 @@ namespace App.BLL.DTO
 
         [RegularExpression(@"^\d+.\d{0,2}$", ErrorMessage = "Price can't have more than 2 decimal places")]
         public decimal Price { get; set; }
+
+        public Guid? BagWithParcelsId { get; set; }
+        public BagWithParcels? BagWithParcels { get; set; }
     }
 }

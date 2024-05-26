@@ -10,12 +10,11 @@ using System.Threading.Tasks;
 
 namespace App.BLL.DTO
 {
-    public class BagWithParcels : DomainEntityId, IBag
+    public class BagWithParcels : Bag
     {
-        [DisplayName("Bag number")]
-        [MaxLength(15)]
-        public string BagNumber { get; set; } = default!;
-
         public ICollection<Parcel>? ListOfParcels { get; set; }
+
+        public Guid? ShipmentId { get; set; }
+        public Shipment? Shipment { get; set; }
     }
 }

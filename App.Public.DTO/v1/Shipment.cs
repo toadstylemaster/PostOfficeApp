@@ -7,6 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using App.Domain;
 using Base.Domain;
+using Base.Contracts.Domain;
 
 namespace App.Public.DTO.v1
 {
@@ -20,6 +21,8 @@ namespace App.Public.DTO.v1
 
         public DateTime FlightDate { get; set; }
 
-        public ICollection<string> ListOfBags { get; set; } = default!;
+        public ICollection<Bag>? ListOfBags { get; set; }
+
+        public bool IsFinalized { get; set; }
     }
 }

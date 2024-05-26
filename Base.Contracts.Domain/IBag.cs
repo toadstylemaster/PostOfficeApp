@@ -6,12 +6,12 @@ using System.Threading.Tasks;
 
 namespace Base.Contracts.Domain
 {
-    public interface IBag: IBag<string>
+    /// <summary>
+    ///     default Bag Entity interface
+    /// </summary>
+    public interface IBag
     {
+        public string BagNumber { get; set; }
     }
 
-    public interface IBag<TKey>
-    {
-        public TKey BagNumber { get; set; }
-    }
 }
