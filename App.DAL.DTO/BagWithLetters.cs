@@ -1,7 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel;
-using Base.Contracts.Domain;
-using Base.Domain;
 using Base.Helpers;
 
 namespace App.DAL.DTO
@@ -22,8 +20,5 @@ namespace App.DAL.DTO
         [Range(0, double.MaxValue, ErrorMessage = "Price must be a positive number.")]
         [DecimalPrecision(2, ErrorMessage = "Price cannot have more than 2 decimal places.")]
         public decimal Price { get; set; }
-
-        public Guid? ShipmentId { get; set; }
-        public Shipment? Shipment { get; set; }
     }
 }

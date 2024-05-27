@@ -3,6 +3,7 @@ using App.BLL.DTO;
 using App.BLL.Mappers;
 using App.DAL.Contracts;
 using Base.BLL;
+using Base.Domain;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,29 +20,34 @@ namespace App.BLL.Services
 
         public async Task<IEnumerable<Public.DTO.v1.BagWithParcels>> GetBagWithParcels()
         {
-            var res = (await Repository.AllAsync())
+            var res = (await Repository.AllAsync(true))
                 .Select(x => new App.Public.DTO.v1.BagWithParcels()
                 {
                     Id = x.Id,
                     BagNumber = x.BagNumber,
-                    ListOfParcels = (ICollection<App.Public.DTO.v1.Parcel>?)x.ListOfParcels
+                    ListOfParcels = Map(x.ListOfParcels)
                 })
                 .ToList();
             return res;
         }
 
-        public async Task<IEnumerable<Public.DTO.v1.BagWithParcels>> GetBagWithParcelsByShipmentId(App.Public.DTO.v1.Shipment shipment)
+        public async Task<IEnumerable<Public.DTO.v1.BagWithParcels>> GetBagWithParcelsByShipmentId(Guid? shipmentId)
         {
+            if (shipmentId == null)
+            {
+                return new List<App.Public.DTO.v1.BagWithParcels>();
+            }
+            var shipment = await Repository.GetShipmentById(shipmentId);
             var validBagWithParcels = new List<App.Public.DTO.v1.BagWithParcels>();
             
-            if(shipment.ListOfBags == null)
+            if(shipment == null || shipment.ListOfBags == null)
             {
                 return validBagWithParcels;
             }
 
             foreach(var item in shipment.ListOfBags)
             {
-                var validBag = await Repository.FindAsync(item.Id);
+                var validBag = await Repository.FindAsync(item.Id, true);
                 if (validBag != null)
                 {
                     validBagWithParcels.Add(Map(validBag));
@@ -51,50 +57,77 @@ namespace App.BLL.Services
             return validBagWithParcels;
         }
 
-        public void PostBagWithParcels(Public.DTO.v1.BagWithParcels bagWithParcels)
+        public App.Public.DTO.v1.BagWithParcels PostBagWithParcels(Public.DTO.v1.BagWithParcels bagWithParcels)
         {
-            var bagWithParcelsFromDb = new App.DAL.DTO.Shipment()
+            var bagWithParcelsFromDb = new App.DAL.DTO.BagWithParcels()
             {
-                Id = shipment.Id,
-                ShipmentNumber = shipment.ShipmentNumber,
-                Airport = shipment.Airport,
-                FlightNumber = shipment.FlightNumber,
-                FlightDate = shipment.FlightDate,
-                ListOfBags = shipment.ListOfBags,
+                Id = bagWithParcels.Id,
+                BagNumber = bagWithParcels.BagNumber,
+                ListOfParcels = Map(bagWithParcels.ListOfParcels)
             };
 
             if (bagWithParcelsFromDb == null)
             {
-                throw new ArgumentNullException("Shipment is invalid!");
+                throw new ArgumentNullException("Bag with parcels is invalid!");
             }
-            var dalShipment = Repository.Add(bagWithParcelsFromDb);
-            var dtoShipment = new App.Public.DTO.v1.Shipment()
+            var dalbagWithParcels = Repository.Add(bagWithParcelsFromDb);
+            var dtobagWithParcels = new App.Public.DTO.v1.BagWithParcels()
             {
-                Id = dalShipment.Id,
-                ShipmentNumber = dalShipment.ShipmentNumber,
-                Airport = dalShipment.Airport,
-                FlightNumber = dalShipment.FlightNumber,
-                FlightDate = dalShipment.FlightDate,
-                ListOfBags = dalShipment.ListOfBags,
+                Id = dalbagWithParcels.Id,
+                BagNumber = dalbagWithParcels.BagNumber,
+                ListOfParcels = Map(dalbagWithParcels.ListOfParcels)
             };
 
-            return dtoShipment;
+            return dtobagWithParcels;
         }
 
-        private IEnumerable<App.Public.DTO.v1.BagWithParcels>? Map(List<DAL.DTO.BagWithParcels>? bags)
+        public Public.DTO.v1.BagWithParcels PutParcelsToBag(Guid bagWithParcelsId, List<App.Public.DTO.v1.Parcel> parcels)
         {
-            var res = bags.Select(bag =>
+            var dalBagWithParcels = Repository.FindAsync(bagWithParcelsId, true).Result;
+
+            if (dalBagWithParcels == null || parcels == null)
             {
-                return new App.Public.DTO.v1.BagWithParcels()
-                {
-                    Id = bag.Id,
-                    BagNumber = bag.BagNumber,
-                    ListOfParcels = Map(bag.ListOfParcels?.ToList())?.ToList(),
-                };
-            });
-            return res;
-        }        
-        
+                throw new ArgumentException("Error: Either bagWithParcels with given id was not found or parcels were invalid!");
+            }
+            Repository.Update(dalBagWithParcels);
+
+            var dtoBagWithParcels = new App.Public.DTO.v1.BagWithParcels()
+            {
+                Id = dalBagWithParcels.Id,
+                BagNumber = dalBagWithParcels.BagNumber,
+                ListOfParcels = parcels
+            };
+
+            return dtoBagWithParcels;
+        }
+
+        public async Task<bool> RemoveBagWithParcelsFromDb(Guid id)
+        {
+            var bagWithParcels = await Repository.FindAsync(id, true);
+            if (bagWithParcels == null)
+            {
+                return false;
+            }
+
+            await Repository.RemoveAsync(id, true);
+            return true;
+        }
+
+        public async Task<bool> RemoveBagsWithParcelsFromDb(List<App.Public.DTO.v1.BagWithParcels>? bags)
+        {
+            if (bags == null)
+            {
+                return false;
+            }
+            var bagCount = bags.Count;
+
+            for (int i = bagCount - 1; i >= 0; i--)
+            {
+                await Repository.RemoveAsync(bags.ElementAt(i).Id, true);
+            }
+            return true;
+        }
+
         private App.Public.DTO.v1.BagWithParcels Map(DAL.DTO.BagWithParcels bag)
         {
             if (bag == null)
@@ -130,5 +163,27 @@ namespace App.BLL.Services
             });
             return res.ToList();
         }
+
+        private List<DAL.DTO.Parcel>? Map(ICollection<App.Public.DTO.v1.Parcel>? parcels)
+        {
+            if (parcels == null)
+            {
+                return null;
+            }
+            var res = parcels.Select(parcel =>
+            {
+                return new DAL.DTO.Parcel()
+                {
+                    Id = parcel.Id,
+                    ParcelNumber = parcel.ParcelNumber,
+                    RecipientName = parcel.RecipientName,
+                    DestinationCountry = parcel.DestinationCountry,
+                    Price = parcel.Price,
+                    Weight = parcel.Weight,
+                };
+            });
+            return res.ToList();
+        }
+
     }
 }

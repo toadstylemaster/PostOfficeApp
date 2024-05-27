@@ -9,11 +9,13 @@ using App.DAL.EF;
 using App.BLL.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using App.Public.DTO.v1;
+using Asp.Versioning;
 
 namespace WebApp.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [ApiVersion("1.0")]
+    [Route("api/v{version:apiVersion}/[controller]")]
     public class BagWithLettersController : ControllerBase
     {
         private readonly IAppBLL _bll;
@@ -32,78 +34,24 @@ namespace WebApp.Controllers
         [ProducesResponseType(typeof(IEnumerable<App.Public.DTO.v1.BagWithLetters>), 200)]
         [AllowAnonymous]
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<BagWithLetters>>> GetBagWithLetters()
+        public async Task<IEnumerable<BagWithLetters>> GetBagWithLetters()
         {
-            var res = (await _bll.BagWithLetters.AllAsync())
-                .Select(x => new App.Public.DTO.v1.BagWithLetters()
-                {
-                    Id = x.Id,
-                    BagNumber = x.BagNumber,
-                    CountOfLetters = x.CountOfLetters,
-                    Weight = x.Weight,
-                    Price = x.Price,
-                })
-                .ToList();
-            return res;
+            return await _bll.BagWithLetters.GetBagWithLetters();
         }
 
-        // GET: api/BagWithLetters/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<BagWithLetters>> GetBagWithLetters(Guid id)
-        {
-            var bagWithLetters = await _bll.BagWithLetters.FindAsync(id);
-
-            if (bagWithLetters == null)
-            {
-                return NotFound();
-            }
-
-            var bagWithLettersFromDb = new App.Public.DTO.v1.BagWithLetters()
-            {
-                Id = bagWithLetters.Id,
-                BagNumber = bagWithLetters.BagNumber,
-                CountOfLetters = bagWithLetters.CountOfLetters,
-                Weight = bagWithLetters.Weight,
-                Price = bagWithLetters.Price,
-            };
-
-            return bagWithLettersFromDb;
-        }
-
-        // PUT: api/BagWithLetters/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         /// <summary>
-        /// Update bagWithLetters entity with list of Letters.
+        /// Get all bagWithLetters entities that are linked to given shipment entity.
         /// </summary>
-        /// <param name="id">Supply parcel entity id you want to change.</param>
-        /// <param name="bagWithLetters">Supply bagWithLetters entity with updated values.</param>
-        /// <returns>404 if bagWithLetters with given id is not found or 204, if changes were successful</returns>
-        [HttpPut("{id}")]
+        /// <returns>List of all Letters</returns>
+        [Route("{shipmentId}")]
         [Produces("application/json")]
         [Consumes("application/json")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> PutBagWithLetters(Guid id, BagWithLetters bagWithLetters)
+        [ProducesResponseType(typeof(IEnumerable<App.Public.DTO.v1.BagWithLetters>), 200)]
+        [AllowAnonymous]
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<BagWithLetters>>> GetBagWithLettersByShipment(Guid shipmentId)
         {
-            if (id != bagWithLetters.Id)
-            {
-                return BadRequest();
-            }
-
-
-            var bagWithLettersFromDb = await _bll.BagWithLetters.FindAsync(id);
-            if (bagWithLettersFromDb == null)
-            {
-                return NotFound();
-            }
-
-            bagWithLettersFromDb.Id = bagWithLetters.Id;
-            bagWithLettersFromDb.BagNumber = bagWithLetters.BagNumber;
-            bagWithLettersFromDb.CountOfLetters = bagWithLetters.CountOfLetters;
-            bagWithLettersFromDb.Weight = bagWithLetters.Weight;
-            bagWithLettersFromDb.Price = bagWithLetters.Price;
-
-            return NoContent();
+            return (await _bll.BagWithLetters.GetBagWithLettersByShipmentId(shipmentId)).ToList();
         }
 
         // POST: api/BagWithLetters
@@ -119,38 +67,39 @@ namespace WebApp.Controllers
         [ProducesResponseType(StatusCodes.Status201Created)]
         public async Task<ActionResult<BagWithLetters>> PostBagWithLetters(BagWithLetters bagWithLetters)
         {
-            var bagWithLettersFromDb = new App.BLL.DTO.BagWithLetters()
+            var newBagWithLetters = new BagWithLetters();
+            try
             {
-                Id = bagWithLetters.Id,
-                BagNumber = bagWithLetters.BagNumber,
-                CountOfLetters = bagWithLetters.CountOfLetters,
-                Weight = bagWithLetters.Weight,
-                Price = bagWithLetters.Price,
-            };
-
-            _bll.BagWithLetters.Add(bagWithLettersFromDb);
+                newBagWithLetters = _bll.BagWithLetters.PostBagWithLetters(bagWithLetters);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
             await _bll.SaveChangesAsync();
 
             return CreatedAtAction("GetBagWithLetters",
                 new
                 {
-                    id = bagWithLetters.Id,
+                    id = newBagWithLetters.Id,
                     version = HttpContext.GetRequestedApiVersion()!.ToString()
                 },
-                bagWithLetters);
+                newBagWithLetters);
         }
 
         // DELETE: api/BagWithLetters/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteBagWithLetters(Guid id)
         {
-            var bagWithLetters = await _bll.BagWithLetters.FindAsync(id);
-            if (bagWithLetters == null)
+            try
             {
-                return NotFound();
-            }
+                await _bll.BagWithLetters.RemoveBagWithLettersFromDB(id);
 
-            _bll.BagWithLetters.Remove(bagWithLetters);
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(ex.Message);
+            }
             await _bll.SaveChangesAsync();
 
             return NoContent();

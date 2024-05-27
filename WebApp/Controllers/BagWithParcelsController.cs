@@ -9,11 +9,14 @@ using App.DAL.EF;
 using App.BLL.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using App.Public.DTO.v1;
+using Base.Domain;
+using Asp.Versioning;
 
 namespace WebApp.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [ApiVersion("1.0")]
+    [Route("api/v{version:apiVersion}/[controller]")]
     public class BagWithParcelsController : ControllerBase
     {
         private readonly IAppBLL _bll;
@@ -32,73 +35,56 @@ namespace WebApp.Controllers
         [ProducesResponseType(typeof(IEnumerable<App.Public.DTO.v1.BagWithParcels>), 200)]
         [AllowAnonymous]
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<BagWithParcels>>> GetBagWithParcels()
+        public async Task<IEnumerable<BagWithParcels>> GetBagWithParcels()
         {
-            var res = (await _bll.BagWithParcels.AllAsync())
-                .Select(x => new App.Public.DTO.v1.BagWithParcels()
-                {
-                    Id = x.Id,
-                    BagNumber = x.BagNumber,
-                    ListOfParcels = (ICollection<App.Public.DTO.v1.Parcel>?)x.ListOfParcels
-                })
-                .ToList();
-            return res;
+            return await _bll.BagWithParcels.GetBagWithParcels();
         }
 
-        // GET: api/BagWithParcels/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<BagWithParcels>> GetBagWithParcels(Guid id)
+        /// <summary>
+        /// Get all bagWithParcels entities that are linked with given shipment entity.
+        /// </summary>
+        /// <returns>List of all Letters</returns>
+        [Route("/{Id}/byShipments")]
+        [Produces("application/json")]
+        [Consumes("application/json")]
+        [ProducesResponseType(typeof(IEnumerable<App.Public.DTO.v1.BagWithParcels>), 200)]
+        [AllowAnonymous]
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<BagWithParcels>>> GetBagWithParcelsByShipment(Guid shipmentId)
         {
-            var bagWithParcels = await _bll.BagWithParcels.FindAsync(id);
-
-            if (bagWithParcels == null)
-            {
-                return NotFound();
-            }
-
-            var bagWithParcelsFromDb = new App.Public.DTO.v1.BagWithParcels()
-            {
-                Id = bagWithParcels.Id,
-                BagNumber = bagWithParcels.BagNumber,
-                ListOfParcels = (ICollection<Parcel>?)bagWithParcels.ListOfParcels
-            };
-
-            return bagWithParcelsFromDb;
+            return (await _bll.BagWithParcels.GetBagWithParcelsByShipmentId(shipmentId)).ToList();
         }
 
-        // PUT: api/BagWithParcels/5
+        // PUT: api/Shipments/5/PutBags
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         /// <summary>
-        /// Update bagWithParcels entity with list of Parcels.
+        /// Update bagWithParcels with parcels. Find entity via parameter id and update it with 
         /// </summary>
-        /// <param name="id">Supply parcel entity id you want to change.</param>
-        /// <param name="bagWithParcels">Supply bagWithParcels entity with updated values.</param>
-        /// <returns>404 if bagWithParcels with given id is not found or 204, if changes were successful</returns>
+        /// <param name="id">Supply bagWithParcels entity id you want to change.</param>
+        /// <param name="parcels">Supply list of parcel entities you want to add to bagWithParcels entity.</param>
+        /// <returns>404 if shipment with given id is not found or 204, if changes were successful</returns>
+        [Route("~/{id}/PutParcels")]
         [HttpPut("{id}")]
         [Produces("application/json")]
         [Consumes("application/json")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> PutBagWithParcels(Guid id, BagWithParcels bagWithParcels)
+        public async Task<IActionResult> PutParcelsBag(Guid id, List<Parcel> parcels)
         {
-            if (id != bagWithParcels.Id)
+            try
             {
-                return BadRequest();
+                _bll.BagWithParcels.PutParcelsToBag(id, parcels);
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(ex.Message);
             }
 
-
-            var bagWithParcelsFromDb = await _bll.BagWithParcels.FindAsync(id);
-            if (bagWithParcelsFromDb == null)
-            {
-                return NotFound();
-            }
-
-            bagWithParcelsFromDb.Id = bagWithParcels.Id;
-            bagWithParcelsFromDb.BagNumber = bagWithParcels.BagNumber;
-            bagWithParcelsFromDb.ListOfParcels = (ICollection<App.BLL.DTO.Parcel>?)bagWithParcels.ListOfParcels;
+            await _bll.SaveChangesAsync();
 
             return NoContent();
         }
+
 
         // POST: api/BagWithParcels
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
@@ -113,36 +99,40 @@ namespace WebApp.Controllers
         [ProducesResponseType(StatusCodes.Status201Created)]
         public async Task<ActionResult<BagWithParcels>> PostBagWithParcels(BagWithParcels bagWithParcels)
         {
-            var bagWithParcelsFromDb = new App.BLL.DTO.BagWithParcels()
+            var newBagWithParcels = new BagWithParcels();
+            try
             {
-                Id = bagWithParcels.Id,
-                BagNumber = bagWithParcels.BagNumber,
-                ListOfParcels = (ICollection<App.BLL.DTO.Parcel>?)bagWithParcels.ListOfParcels
-            };
+                newBagWithParcels = _bll.BagWithParcels.PostBagWithParcels(bagWithParcels);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
 
-            _bll.BagWithParcels.Add(bagWithParcelsFromDb);
             await _bll.SaveChangesAsync();
 
             return CreatedAtAction("GetBagWithParcels",
                 new
                 {
-                    id = bagWithParcels.Id,
+                    id = newBagWithParcels.Id,
                     version = HttpContext.GetRequestedApiVersion()!.ToString()
                 },
-                bagWithParcels);
+                newBagWithParcels);
         }
 
         // DELETE: api/BagWithParcels/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteBagWithParcels(Guid id)
         {
-            var bagWithParcels = await _bll.BagWithParcels.FindAsync(id);
-            if (bagWithParcels == null)
+            try
             {
-                return NotFound();
-            }
+                await _bll.BagWithParcels.RemoveBagWithParcelsFromDb(id);
 
-            _bll.BagWithParcels.Remove(bagWithParcels);
+            }catch(ArgumentException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            
             await _bll.SaveChangesAsync();
 
             return NoContent();

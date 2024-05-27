@@ -32,7 +32,7 @@ namespace App.Domain
         [DecimalPrecision(2, ErrorMessage = "Price cannot have more than 2 decimal places.")]
         public decimal Price { get; set; }
 
-        public Guid? BagWithParcelsId { get; set; }
         public BagWithParcels? BagWithParcels { get; set; }
+        public Guid? BagWithParcelsId { get; set; }
     }
 }

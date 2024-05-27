@@ -34,12 +34,12 @@ namespace Base.BLL
 
         public async Task<IEnumerable<TBllEntity>> AllAsync(bool noTracking = true)
         {
-            return (await Repository.AllAsync()).Select(e => Mapper.Map(e)!);
+            return (await Repository.AllAsync(noTracking)).Select(e => Mapper.Map(e)!);
         }
 
         public async Task<TBllEntity?> FindAsync(TKey id, bool noTracking = true)
         {
-            return Mapper.Map(await Repository.FindAsync(id));
+            return Mapper.Map(await Repository.FindAsync(id, noTracking));
         }
 
         public TBllEntity Add(TBllEntity entity)
@@ -59,7 +59,7 @@ namespace Base.BLL
 
         public async Task<TBllEntity?> RemoveAsync(TKey id, bool noTracking = true)
         {
-            return Mapper.Map(await Repository.RemoveAsync(id));
+            return Mapper.Map(await Repository.RemoveAsync(id, true));
         }
     }
 }

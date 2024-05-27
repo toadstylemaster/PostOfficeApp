@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace App.DAL.EF.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20240526093619_Initial")]
+    [Migration("20240527000609_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -24,6 +24,29 @@ namespace App.DAL.EF.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("App.Domain.Bag", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("BagNumber")
+                        .IsRequired()
+                        .HasMaxLength(15)
+                        .HasColumnType("nvarchar(15)");
+
+                    b.Property<Guid?>("ShipmentId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ShipmentId");
+
+                    b.ToTable("Bags", (string)null);
+
+                    b.UseTptMappingStrategy();
+                });
 
             modelBuilder.Entity("App.Domain.Parcel", b =>
                 {
@@ -66,8 +89,9 @@ namespace App.DAL.EF.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("Airport")
-                        .HasColumnType("int");
+                    b.Property<string>("Airport")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("FlightDate")
                         .HasColumnType("datetime2");
@@ -88,39 +112,9 @@ namespace App.DAL.EF.Migrations
                     b.ToTable("Shipments");
                 });
 
-            modelBuilder.Entity("Base.Domain.Bag", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("BagNumber")
-                        .IsRequired()
-                        .HasMaxLength(15)
-                        .HasColumnType("nvarchar(15)");
-
-                    b.Property<string>("Discriminator")
-                        .IsRequired()
-                        .HasMaxLength(21)
-                        .HasColumnType("nvarchar(21)");
-
-                    b.Property<Guid?>("ShipmentId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ShipmentId");
-
-                    b.ToTable("Bag");
-
-                    b.HasDiscriminator<string>("Discriminator").HasValue("Bag");
-
-                    b.UseTphMappingStrategy();
-                });
-
             modelBuilder.Entity("App.Domain.BagWithLetters", b =>
                 {
-                    b.HasBaseType("Base.Domain.Bag");
+                    b.HasBaseType("App.Domain.Bag");
 
                     b.Property<int>("CountOfLetters")
                         .HasColumnType("int");
@@ -128,33 +122,27 @@ namespace App.DAL.EF.Migrations
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
 
-                    b.Property<Guid?>("ShipmentId1")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<decimal>("Weight")
                         .HasColumnType("decimal(18,2)");
 
-                    b.HasIndex("ShipmentId1");
-
-                    b.ToTable("Bag", t =>
-                        {
-                            t.Property("ShipmentId1")
-                                .HasColumnName("BagWithLetters_ShipmentId1");
-                        });
-
-                    b.HasDiscriminator().HasValue("BagWithLetters");
+                    b.ToTable("BagsWithLetters", (string)null);
                 });
 
             modelBuilder.Entity("App.Domain.BagWithParcels", b =>
                 {
-                    b.HasBaseType("Base.Domain.Bag");
+                    b.HasBaseType("App.Domain.Bag");
 
-                    b.Property<Guid?>("ShipmentId1")
-                        .HasColumnType("uniqueidentifier");
+                    b.ToTable("BagsWithParcels", (string)null);
+                });
 
-                    b.HasIndex("ShipmentId1");
+            modelBuilder.Entity("App.Domain.Bag", b =>
+                {
+                    b.HasOne("App.Domain.Shipment", "Shipment")
+                        .WithMany("ListOfBags")
+                        .HasForeignKey("ShipmentId")
+                        .OnDelete(DeleteBehavior.Cascade);
 
-                    b.HasDiscriminator().HasValue("BagWithParcels");
+                    b.Navigation("Shipment");
                 });
 
             modelBuilder.Entity("App.Domain.Parcel", b =>
@@ -162,37 +150,27 @@ namespace App.DAL.EF.Migrations
                     b.HasOne("App.Domain.BagWithParcels", "BagWithParcels")
                         .WithMany("ListOfParcels")
                         .HasForeignKey("BagWithParcelsId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Cascade);
 
                     b.Navigation("BagWithParcels");
                 });
 
-            modelBuilder.Entity("Base.Domain.Bag", b =>
-                {
-                    b.HasOne("App.Domain.Shipment", null)
-                        .WithMany("ListOfBags")
-                        .HasForeignKey("ShipmentId")
-                        .OnDelete(DeleteBehavior.Restrict);
-                });
-
             modelBuilder.Entity("App.Domain.BagWithLetters", b =>
                 {
-                    b.HasOne("App.Domain.Shipment", "Shipment")
-                        .WithMany()
-                        .HasForeignKey("ShipmentId1")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Shipment");
+                    b.HasOne("App.Domain.Bag", null)
+                        .WithOne()
+                        .HasForeignKey("App.Domain.BagWithLetters", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("App.Domain.BagWithParcels", b =>
                 {
-                    b.HasOne("App.Domain.Shipment", "Shipment")
-                        .WithMany()
-                        .HasForeignKey("ShipmentId1")
-                        .OnDelete(DeleteBehavior.Restrict);
-
-                    b.Navigation("Shipment");
+                    b.HasOne("App.Domain.Bag", null)
+                        .WithOne()
+                        .HasForeignKey("App.Domain.BagWithParcels", "Id")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("App.Domain.Shipment", b =>

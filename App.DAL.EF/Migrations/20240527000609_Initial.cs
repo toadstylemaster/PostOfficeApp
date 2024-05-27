@@ -17,7 +17,7 @@ namespace App.DAL.EF.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     ShipmentNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Airport = table.Column<int>(type: "int", nullable: false),
+                    Airport = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     FlightNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     FlightDate = table.Column<DateTime>(type: "datetime2", nullable: false),
                     IsFinalized = table.Column<bool>(type: "bit", nullable: false)
@@ -28,40 +28,59 @@ namespace App.DAL.EF.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Bag",
+                name: "Bags",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     BagNumber = table.Column<string>(type: "nvarchar(15)", maxLength: 15, nullable: false),
-                    Discriminator = table.Column<string>(type: "nvarchar(21)", maxLength: 21, nullable: false),
-                    ShipmentId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    CountOfLetters = table.Column<int>(type: "int", nullable: true),
-                    Weight = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: true),
-                    BagWithLetters_ShipmentId1 = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
-                    ShipmentId1 = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
+                    ShipmentId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Bag", x => x.Id);
+                    table.PrimaryKey("PK_Bags", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Bag_Shipments_BagWithLetters_ShipmentId1",
-                        column: x => x.BagWithLetters_ShipmentId1,
-                        principalTable: "Shipments",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Bag_Shipments_ShipmentId",
+                        name: "FK_Bags_Shipments_ShipmentId",
                         column: x => x.ShipmentId,
                         principalTable: "Shipments",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "BagsWithLetters",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CountOfLetters = table.Column<int>(type: "int", nullable: false),
+                    Weight = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Price = table.Column<decimal>(type: "decimal(18,2)", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BagsWithLetters", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Bag_Shipments_ShipmentId1",
-                        column: x => x.ShipmentId1,
-                        principalTable: "Shipments",
+                        name: "FK_BagsWithLetters_Bags_Id",
+                        column: x => x.Id,
+                        principalTable: "Bags",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "BagsWithParcels",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BagsWithParcels", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_BagsWithParcels_Bags_Id",
+                        column: x => x.Id,
+                        principalTable: "Bags",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -80,27 +99,17 @@ namespace App.DAL.EF.Migrations
                 {
                     table.PrimaryKey("PK_Parcels", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Parcels_Bag_BagWithParcelsId",
+                        name: "FK_Parcels_BagsWithParcels_BagWithParcelsId",
                         column: x => x.BagWithParcelsId,
-                        principalTable: "Bag",
+                        principalTable: "BagsWithParcels",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Bag_BagWithLetters_ShipmentId1",
-                table: "Bag",
-                column: "BagWithLetters_ShipmentId1");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Bag_ShipmentId",
-                table: "Bag",
+                name: "IX_Bags_ShipmentId",
+                table: "Bags",
                 column: "ShipmentId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Bag_ShipmentId1",
-                table: "Bag",
-                column: "ShipmentId1");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Parcels_BagWithParcelsId",
@@ -112,10 +121,16 @@ namespace App.DAL.EF.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "BagsWithLetters");
+
+            migrationBuilder.DropTable(
                 name: "Parcels");
 
             migrationBuilder.DropTable(
-                name: "Bag");
+                name: "BagsWithParcels");
+
+            migrationBuilder.DropTable(
+                name: "Bags");
 
             migrationBuilder.DropTable(
                 name: "Shipments");

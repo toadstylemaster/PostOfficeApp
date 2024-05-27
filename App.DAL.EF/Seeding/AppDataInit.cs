@@ -25,15 +25,15 @@ namespace App.DAL.EF.Seeding
             context.Database.EnsureDeleted();
         }
 
-        public static void SeedAppData(AppDbContext context)
+        public async static void SeedAppData(AppDbContext context)
         {
-            SeedAppDataShipments(context, SeedAppDataBagWithParcels(context, SeedAppDataParcels(context).Entity).Entity);
+            SeedAppDataShipments(context, (await SeedAppDataBagWithParcels(context, (await SeedAppDataParcels(context)).Entity)).Entity);
             context.SaveChanges();
         }
 
-        public static EntityEntry<Parcel> SeedAppDataParcels(AppDbContext context)
+        public async static Task<EntityEntry<Parcel>> SeedAppDataParcels(AppDbContext context)
         {
-            return context.Parcels.Add(new Parcel
+            return await context.Parcels.AddAsync(new Parcel
             {
                 ParcelNumber = "ZZ123456YY",
                 RecipientName = "Kris Lahe",
@@ -43,27 +43,27 @@ namespace App.DAL.EF.Seeding
             });
         }        
         
-        public static EntityEntry<BagWithParcels> SeedAppDataBagWithParcels(AppDbContext context, Parcel parcel)
+        public static async Task<EntityEntry<BagWithParcels>> SeedAppDataBagWithParcels(AppDbContext context, Parcel parcel)
         {
 
-            return context.BagWithParcels.Add(new BagWithParcels
+            return await context.BagWithParcels.AddAsync(new BagWithParcels
             {
                 BagNumber = "ADBCEFG",
                 ListOfParcels = new List<Parcel>{ parcel }
             });
         }
 
-        public static void SeedAppDataShipments(AppDbContext context, BagWithParcels bagWithParcels)
+        public async static void SeedAppDataShipments(AppDbContext context, BagWithParcels bagWithParcels)
         {
             var listOfParcelBags = new List<Bag>
             {
                 bagWithParcels
             };
 
-            context.Shipments.Add(new Shipment
+            await context.Shipments.AddAsync(new Shipment
             {
                 ShipmentNumber = "AAA-BBBBBB",
-                Airport = Airport.HEL,
+                Airport = "HEL",
                 FlightNumber = "AB1234",
                 FlightDate = DateTime.Now,
                 IsFinalized = false,

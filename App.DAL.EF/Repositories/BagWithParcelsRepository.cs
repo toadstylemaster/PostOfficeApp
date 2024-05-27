@@ -28,15 +28,20 @@ namespace App.DAL.EF.Repositories
             throw new NotImplementedException();
         }
 
+        public async Task<App.Domain.Shipment?> GetShipmentById(Guid? id)
+        {
+            return await RepositoryDbContext.Shipments.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
+        }
+
         public override BagWithParcels Add(BagWithParcels bagWithParcels)
         {
             var bag = RepositoryDbContext.BagWithParcels.Any(x => x.BagNumber == bagWithParcels.BagNumber);
-            var letterBag = RepositoryDbContext.BagWithParcels.Any(x => x.BagNumber == bagWithParcels.BagNumber);
+            var letterBag = RepositoryDbContext.BagWithLetters.Any(x => x.BagNumber == bagWithParcels.BagNumber);
             if (!bag && !letterBag)
             {
                 return base.Add(bagWithParcels);
             }
-            throw new NotImplementedException();
+            throw new ArgumentException("Bag with same bag number already exists!");
         }
     }
 }

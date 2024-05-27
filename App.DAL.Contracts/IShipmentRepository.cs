@@ -1,5 +1,6 @@
 ﻿using App.DAL.DTO;
 using Base.Contracts.DAL;
+using Base.Domain;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,9 +11,13 @@ namespace App.DAL.Contracts
 {
     public interface IShipmentRepository : IBaseRepository<Shipment>, IShipmentRepositoryCustom<Shipment>
     {
+        void RemoveBagsFromShipment(ICollection<Bag> bags);
     }
 
     public interface IShipmentRepositoryCustom<TEntity>
     {
     }
+
+
+    
 }

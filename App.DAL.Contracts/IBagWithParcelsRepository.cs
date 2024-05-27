@@ -11,6 +11,7 @@ namespace App.DAL.Contracts
     public interface IBagWithParcelsRepository : IBaseRepository<BagWithParcels>, IBagWithParcelsRepositoryCustom<BagWithParcels>
     {
         Task<IEnumerable<BagWithParcels>> GetAllByNameAsync(string partialTitle, bool noTracking = true);
+        Task<App.Domain.Shipment?> GetShipmentById(Guid? id);
     }
 
     public interface IBagWithParcelsRepositoryCustom<TEntity>

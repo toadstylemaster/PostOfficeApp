@@ -1,12 +1,5 @@
-﻿using Base.Contracts.Domain;
-using Base.Domain;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Base.Helpers;
 
 namespace App.BLL.DTO
@@ -28,7 +21,5 @@ namespace App.BLL.DTO
         [DecimalPrecision(2, ErrorMessage = "Price cannot have more than 2 decimal places.")]
         public decimal Price { get; set; }
 
-        public Guid? ShipmentId { get; set; }
-        public Shipment? Shipment { get; set; }
     }
 }

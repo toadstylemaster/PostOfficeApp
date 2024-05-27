@@ -17,5 +17,21 @@ namespace App.DAL.EF.Repositories
             return (await RepositoryDbSet
                 .ToListAsync()).Select(x => Mapper.Map(x)!);
         }
+
+        public async Task<App.Domain.Shipment?> GetShipmentById(Guid? id)
+        {
+            return await RepositoryDbContext.Shipments.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
+        }
+
+        public override BagWithLetters Add(BagWithLetters bagWithLetters)
+        {
+            var bag = RepositoryDbContext.BagWithLetters.Any(x => x.BagNumber == bagWithLetters.BagNumber);
+            var letterBag = RepositoryDbContext.BagWithParcels.Any(x => x.BagNumber == bagWithLetters.BagNumber);
+            if (!bag && !letterBag)
+            {
+                return base.Add(bagWithLetters);
+            }
+            throw new ArgumentException("Bag with same bag number already exists!");
+        }
     }
 }

@@ -11,6 +11,7 @@ namespace App.DAL.EF
             CreateMap<BagWithLetters, Domain.BagWithLetters>().ReverseMap();
             CreateMap<BagWithParcels, Domain.BagWithParcels>().ReverseMap();
             CreateMap<Shipment, Domain.Shipment>().ReverseMap();
+            CreateMap<Bag, Domain.Bag>().ReverseMap();
         }
     }
 }

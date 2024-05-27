@@ -9,11 +9,13 @@ using App.DAL.EF;
 using App.BLL.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using App.Public.DTO.v1;
+using Asp.Versioning;
 
 namespace WebApp.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [ApiVersion("1.0")]
+    [Route("api/v{version:apiVersion}/[controller]")]
     public class ParcelsController : ControllerBase
     {
         private readonly IAppBLL _bll;
@@ -21,97 +23,6 @@ namespace WebApp.Controllers
         public ParcelsController(IAppBLL bll)
         {
             _bll = bll;
-        }
-
-        // GET: api/parcels
-        /// <summary>
-        /// Get all parcel entities.
-        /// </summary>
-        /// <returns>List of all parcels</returns>
-        [Produces("application/json")]
-        [Consumes("application/json")]
-        [ProducesResponseType(typeof(IEnumerable<App.Public.DTO.v1.Parcel>), 200)]
-        [AllowAnonymous]
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Parcel>>> GetParcels()
-        {
-            var res = (await _bll.Parcels.AllAsync())
-                .Select(x => new App.Public.DTO.v1.Parcel()
-                {
-                    Id = x.Id,
-                    ParcelNumber = x.ParcelNumber,
-                    RecipientName = x.RecipientName,
-                    DestinationCountry = x.DestinationCountry,
-                    Weight = x.Weight,
-                    Price = x.Price,
-                })
-                .ToList();
-            return res;
-        }
-
-        // GET: api/Parcels/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Parcel>> GetParcel(Guid id)
-        {
-            var parcel = await _bll.Parcels.FindAsync(id);
-
-            if (parcel == null)
-            {
-                return NotFound();
-            }
-
-            var parcelFromDb = new App.Public.DTO.v1.Parcel()
-            {
-                Id = parcel.Id,
-                ParcelNumber = parcel.ParcelNumber,
-                RecipientName = parcel.RecipientName,
-                DestinationCountry = parcel.DestinationCountry,
-                Weight = parcel.Weight,
-                Price = parcel.Price,
-            };
-
-            return parcelFromDb;
-        }
-
-        // PUT: api/Parcels/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        /// <summary>
-        /// Update parcel entity.
-        /// </summary>
-        /// <param name="id">Supply parcel entity id you want to change.</param>
-        /// <param name="parcel">Supply parcel entity with updated values.</param>
-        /// <returns>404 if parcel with given id is not found or 204, if changes were successful</returns>
-        [HttpPut("{id}")]
-        [Produces("application/json")]
-        [Consumes("application/json")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> PutParcel(Guid id, Parcel parcel)
-        {
-            if (id != parcel.Id)
-            {
-                return BadRequest();
-            }
-
-            var parcelFromDb = await _bll.Parcels.FindAsync(id);
-            if (parcelFromDb == null)
-            {
-                return NotFound();
-            }
-
-            parcelFromDb.Id = parcel.Id;
-            parcelFromDb.ParcelNumber = parcel.ParcelNumber;
-            parcelFromDb.RecipientName = parcel.RecipientName;
-            parcelFromDb.DestinationCountry = parcel.DestinationCountry;
-            parcelFromDb.Weight = parcel.Weight;
-            parcelFromDb.Price = parcel.Price;
-
-
-            _bll.Parcels.Update(parcelFromDb);
-
-            await _bll.SaveChangesAsync();
-
-            return NoContent();
         }
 
         // POST: api/Parcels
@@ -127,39 +38,39 @@ namespace WebApp.Controllers
         [ProducesResponseType(StatusCodes.Status201Created)]
         public async Task<ActionResult<Parcel>> PostParcel(Parcel parcel)
         {
-            var parcelFromDb = new App.BLL.DTO.Parcel()
+            var newParcel = new Parcel();
+            try
             {
-                Id = parcel.Id,
-                ParcelNumber = parcel.ParcelNumber,
-                RecipientName = parcel.RecipientName,
-                DestinationCountry = parcel.DestinationCountry,
-                Weight = parcel.Weight,
-                Price = parcel.Price,
-            };
-
-            _bll.Parcels.Add(parcelFromDb);
+                newParcel = _bll.Parcels.PostParcel(parcel);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(ex.Message);
+            }
             await _bll.SaveChangesAsync();
 
             return CreatedAtAction("GetParcel",
                 new
                 {
-                    id = parcel.Id,
+                    id = newParcel.Id,
                     version = HttpContext.GetRequestedApiVersion()!.ToString()
                 },
-                parcel);
+                newParcel);
         }
 
         // DELETE: api/Parcels/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteParcel(Guid id)
         {
-            var parcel = await _bll.Parcels.FindAsync(id);
-            if (parcel == null)
+            try
             {
-                return NotFound();
-            }
+                await _bll.Parcels.RemoveParcelFromDb(id);
 
-            _bll.Parcels.Remove(parcel);
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(ex.Message);
+            }
             await _bll.SaveChangesAsync();
 
             return NoContent();

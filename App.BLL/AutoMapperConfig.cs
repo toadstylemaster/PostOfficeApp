@@ -13,6 +13,7 @@ namespace App.BLL
             CreateMap<Parcel, DAL.DTO.Parcel>().ReverseMap();
             CreateMap<BagWithLetters, DAL.DTO.BagWithLetters>().ReverseMap();
             CreateMap<BagWithParcels, DAL.DTO.BagWithParcels>().ReverseMap();
+            CreateMap<Bag, DAL.DTO.Bag>().ReverseMap();
         }
     }
 }

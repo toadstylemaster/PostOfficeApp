@@ -1,20 +1,20 @@
 ﻿using Base.Contracts.Domain;
-using System;
-using System.Collections.Generic;
+using Base.Domain;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Base.Domain
+namespace App.Domain
 {
-
-    public abstract class Bag : DomainEntityId<Guid>, IDomainEntityId, IBag
+    [NotMapped]
+    public class Bag : DomainEntityId<Guid>, IDomainEntityId, IBag
     {
         [Required]
         [StringLength(15, ErrorMessage = "Bag number cannot exceed 15 characters.")]
         [RegularExpression(@"^[A-Za-z0-9]*$", ErrorMessage = "Bag number can only contain alphanumeric characters.")]
         public string BagNumber { get; set; } = default!;
+
+        public Guid? ShipmentId { get; set; }
+
+        public Shipment? Shipment { get; set; }
     }
 }

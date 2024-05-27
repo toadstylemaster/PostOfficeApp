@@ -5,6 +5,7 @@ using App.Public.DTO.v1;
 using Asp.Versioning;
 using Base.Contracts.Domain;
 using AutoMapper;
+using Base.Domain;
 
 namespace WebApp.Controllers
 {
@@ -50,7 +51,7 @@ namespace WebApp.Controllers
             }
             catch(Exception ex) 
             {
-                return NotFound();
+                return NotFound(ex.Message);
             }
 
         }
@@ -122,6 +123,36 @@ namespace WebApp.Controllers
             return NoContent();
         }
 
+        // PUT: api/Shipments/5/PutBags
+        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        /// <summary>
+        /// Update shipment entity with list of bags. Find entity via parameter id and update it with list of bags
+        /// </summary>
+        /// <param name="id">Supply shipment entity id you want to change.</param>
+        /// <param name="bags">Supply list of bags of bag entities you want to add to shipment entity.</param>
+        /// <returns>404 if shipment with given id is not found or 204, if changes were successful</returns>
+        [Route("{id}/PutBags")]
+        [HttpPut("{id}")]
+        [Produces("application/json")]
+        [Consumes("application/json")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> PutBagsShipment(Guid id, List<Bag> bags)
+        {
+            try
+            {
+                _bll.Shipments.PutBagsToShipment(id, bags);
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(ex.Message);
+            }
+
+            await _bll.SaveChangesAsync();
+
+            return NoContent();
+        }
+
         // POST: api/Shipments
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         /// <summary>
@@ -135,9 +166,10 @@ namespace WebApp.Controllers
         [ProducesResponseType(StatusCodes.Status201Created)]
         public async Task<ActionResult<Shipment>> PostShipment(Shipment shipment)
         {
+            var newShipment = new Shipment();
             try
             {
-                _bll.Shipments.PostShipment(shipment);
+                newShipment = _bll.Shipments.PostShipment(shipment);
             }catch(ArgumentException ex)
             {
                 return BadRequest(ex.Message);
@@ -148,24 +180,29 @@ namespace WebApp.Controllers
             return CreatedAtAction("GetShipment", 
                 new 
                 {
-                id = shipment.Id,
+                id = newShipment.Id,
                 version = HttpContext.GetRequestedApiVersion()!.ToString()
-                }, 
-                shipment);
+                },
+                newShipment);
         }
+
 
         // DELETE: api/Shipments/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteShipment(Guid id)
         {
-            var shipment = await _bll.Shipments.FindAsync(id);
-            if (shipment == null)
+            try
             {
-                return NotFound();
+                await _bll.Shipments.DeleteShipmentFromDb(id);
+
+            }
+            catch(ArgumentException ex) {
+
+                return NotFound(ex.Message);
             }
 
-            _bll.Shipments.Remove(shipment);
             await _bll.SaveChangesAsync();
+
 
             return NoContent();
         }

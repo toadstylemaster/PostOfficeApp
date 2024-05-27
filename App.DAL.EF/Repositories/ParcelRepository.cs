@@ -13,15 +13,15 @@ namespace App.DAL.EF.Repositories
         {
         }
 
+        public async Task<App.Domain.Shipment?> GetShipmentById(Guid? id)
+        {
+            return await RepositoryDbContext.Shipments.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
+        }
+
         public override async Task<IEnumerable<Parcel>> AllAsync(bool noTracking = true)
         {
             return (await RepositoryDbSet
                 .ToListAsync()).Select(x => Mapper.Map(x)!);
-        }
-
-        public Task<Parcel?> FindAsync(Guid id)
-        {
-            throw new NotImplementedException();
         }
     }
 }

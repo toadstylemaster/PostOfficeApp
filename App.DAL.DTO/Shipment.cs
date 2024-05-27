@@ -3,7 +3,6 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel;
 using App.Domain;
 using Base.Helpers;
-using Base.Contracts.Domain;
 
 namespace App.DAL.DTO
 {
@@ -16,7 +15,7 @@ namespace App.DAL.DTO
 
         [Required]
         [RegularExpression(@"^(TLL|RIX|HEL)$", ErrorMessage = "Airport must be one of the following: 'TLL', 'RIX', 'HEL'.")]
-        public Airport Airport { get; set; }
+        public string Airport { get; set; } = default!;
 
         [DisplayName("Flight number")]
         [RegularExpression(@"^[A-Za-z]{2}\d{4}$", ErrorMessage = "Flight number must be in format: 'LLNNNN', where L-letter, N-number")]

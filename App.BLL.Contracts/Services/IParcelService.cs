@@ -11,5 +11,12 @@ namespace App.BLL.Contracts.Services
 {
     public interface IParcelService : IEntityService<Parcel>, IParcelRepositoryCustom<Parcel>
     {
+        Task<bool> RemoveParcelsFromDb(List<App.Public.DTO.v1.Parcel>? bags);
+
+        Task<List<App.Public.DTO.v1.Parcel>?> GetParcelsByShipmentId(Guid? shipmentId);
+
+        App.Public.DTO.v1.Parcel PostParcel(App.Public.DTO.v1.Parcel parcel);
+
+        Task<bool> RemoveParcelFromDb(Guid id);
     }
 }

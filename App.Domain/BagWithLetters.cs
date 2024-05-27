@@ -5,12 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace App.Domain
 {
+    
     public class BagWithLetters : Bag
     {
         [Required]
@@ -27,8 +25,5 @@ namespace App.Domain
         [Range(0, double.MaxValue, ErrorMessage = "Price must be a positive number.")]
         [DecimalPrecision(2, ErrorMessage = "Price cannot have more than 2 decimal places.")]
         public decimal Price { get; set; }
-
-        public Guid? ShipmentId { get; set; }
-        public Shipment? Shipment { get; set; }
     }
 }
