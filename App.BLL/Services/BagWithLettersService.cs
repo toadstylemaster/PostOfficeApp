@@ -13,8 +13,12 @@ namespace App.BLL.Services
 {
     public class BagWithLettersService : BaseEntityService<BagWithLetters, DAL.DTO.BagWithLetters, IBagWithLettersRepository>, IBagWithLettersService
     {
-        public BagWithLettersService(IBagWithLettersRepository repository, BagWithLettersMapper mapper) : base(repository, mapper)
+        private readonly ShipmentMapper _shipmentMapper;
+
+        public BagWithLettersService(IBagWithLettersRepository repository, BagWithLettersMapper mapper, ShipmentMapper shipmentMapper)
+            : base(repository, mapper)
         {
+            _shipmentMapper = shipmentMapper;
         }
 
         public async Task<bool> RemoveBagWithLettersFromDB(Guid id)
@@ -28,6 +32,45 @@ namespace App.BLL.Services
             await Repository.RemoveAsync(bagWithLetters.Id, true);
             return true;
         }
+
+
+        public async Task<IEnumerable<Bag>> GetBagWithLettersFromListOfBags(List<Bag> bags, Shipment shipment)
+        {
+            if (bags == null)
+            {
+                return new List<Bag>();
+            }
+
+            foreach (var bag in bags)
+            {
+                var bagWithLetters = await Repository.FindByBagNumber(bag.BagNumber);
+                if (bagWithLetters != null)
+                {
+                    if (Mapper.Map(bagWithLetters) is BagWithLetters)
+                    {
+                        var isAdded = await AddShipmentToBagWithLetters(Mapper.Map(bagWithLetters)!, shipment);
+                        if (isAdded) { Repository.ModifyState(bagWithLetters); }
+                    }
+                }
+            }
+            return bags;
+        }
+
+        public async Task<bool> AddShipmentToBagWithLetters(BagWithLetters bag, App.BLL.DTO.Shipment shipment)
+        {
+            var existingShipment = await Repository.FindShipment(shipment.Id);
+            if (existingShipment != null)
+            {
+                Repository.AddShipmentToBagWithLetters(Mapper.Map(bag)!, existingShipment);
+                return true;
+            }
+            else
+            {
+                throw new ArgumentException("Shipment with given Id was not found!");
+            }
+        }
+
+
 
         public async Task<IEnumerable<Public.DTO.v1.BagWithLetters>> GetBagWithLetters()
         {
@@ -44,74 +87,40 @@ namespace App.BLL.Services
             return res;
         }
 
-        public async Task<IEnumerable<Public.DTO.v1.BagWithLetters>> GetBagWithLettersByShipmentId(Guid shipmentId)
+        public async Task<IEnumerable<BagWithLetters>> GetBagWithLettersByShipmentId(Guid shipmentId)
         {
-            var shipment = await Repository.GetShipmentById(shipmentId);
-            var validBagWithLetters = new List<App.Public.DTO.v1.BagWithLetters>();
+            var shipment = await Repository.FindShipment(shipmentId);
+            var validBagWithLetters = new List<BagWithLetters>();
 
             if (shipment == null || shipment.ListOfBags == null)
             {
                 return validBagWithLetters;
             }
-
+            var validBag = new BagWithLetters();
             foreach (var item in shipment.ListOfBags)
             {
-                var validBag = await Repository.FindAsync(item.Id, true);
+                validBag = Mapper.Map(await Repository.FindByBagNumber(item.BagNumber));
                 if (validBag != null)
                 {
-                    validBagWithLetters.Add(Map(validBag));
+                    validBagWithLetters.Add(validBag);
                 }
             }
 
             return validBagWithLetters;
         }
 
-        public Public.DTO.v1.BagWithLetters PostBagWithLetters(Public.DTO.v1.BagWithLetters bagWithLetters)
+        public BagWithLetters PostBagWithLetters(BagWithLetters bagWithLetters)
         {
-            var bagWithLettersFromDb = new App.DAL.DTO.BagWithLetters()
-            {
-                Id = bagWithLetters.Id,
-                BagNumber = bagWithLetters.BagNumber,
-                CountOfLetters = bagWithLetters.CountOfLetters,
-                Price = bagWithLetters.Price,
-                Weight = bagWithLetters.Weight,
-            };
 
-            if (bagWithLettersFromDb == null)
+            if (bagWithLetters == null)
             {
-                throw new ArgumentNullException("Bag with parcels is invalid!");
+                throw new ArgumentNullException("Bag with letters is invalid!");
             }
-            var dalBagWithLetters = Repository.Add(bagWithLettersFromDb);
-            var dtoBagWithLetters = new App.Public.DTO.v1.BagWithLetters()
-            {
-                Id = dalBagWithLetters.Id,
-                BagNumber = dalBagWithLetters.BagNumber,
-                CountOfLetters = dalBagWithLetters.CountOfLetters,
-                Price = dalBagWithLetters.Price,
-                Weight = dalBagWithLetters.Weight,
-            };
-
-            return dtoBagWithLetters;
+            return Mapper.Map(Repository.Add(Mapper.Map(bagWithLetters)!))!;
+           
         }
 
-        private App.Public.DTO.v1.BagWithLetters Map(DAL.DTO.BagWithLetters bag)
-        {
-            if (bag == null)
-            {
-                throw new ArgumentException("No bag provided!");
-            }
-
-            return new App.Public.DTO.v1.BagWithLetters()
-            {
-                Id = bag.Id,
-                BagNumber = bag.BagNumber,
-                CountOfLetters = bag.CountOfLetters,
-                Price = bag.Price,
-                Weight = bag.Weight,
-            };
-        }
-
-        public async Task<bool> RemoveBagsWithLettersFromDB(List<App.Public.DTO.v1.BagWithLetters>? bags)
+        public async Task<bool> RemoveBagsWithLettersFromDB(List<BagWithLetters>? bags)
         {
             if (bags == null)
             {
@@ -124,6 +133,6 @@ namespace App.BLL.Services
                 await Repository.RemoveAsync(bags.ElementAt(i).Id, true);
             }
             return true;
-        }
-    }
+        }       
+    } 
 }

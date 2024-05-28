@@ -23,11 +23,11 @@ namespace App.DAL.EF
             _mapper = mapper;
         }
 
-        public IParcelRepository ParcelRepository => _parcels ??= new ParcelRepository(UowDbContext, new ParcelMapper(_mapper));
+        public IParcelRepository ParcelRepository => _parcels ??= new ParcelRepository(UowDbContext, new ParcelMapper(_mapper), new BagWithParcelsMapper(_mapper));
 
-        public IBagWithLettersRepository BagWithLettersRepository => _bagWithLetters ??= new BagWithLettersRepository(UowDbContext, new BagWithLettersMapper(_mapper));
+        public IBagWithLettersRepository BagWithLettersRepository => _bagWithLetters ??= new BagWithLettersRepository(UowDbContext, new BagWithLettersMapper(_mapper), new ShipmentMapper(_mapper));
 
-        public IBagWithParcelsRepository BagWithParcelsRepository => _bagWithParcels ??= new BagWithParcelsRepository(UowDbContext, new BagWithParcelsMapper(_mapper));
+        public IBagWithParcelsRepository BagWithParcelsRepository => _bagWithParcels ??= new BagWithParcelsRepository(UowDbContext, new BagWithParcelsMapper(_mapper), new ShipmentMapper(_mapper));
 
         public IShipmentRepository ShipmentRepository => _shipments ??= new ShipmentRepository(UowDbContext, new ShipmentMapper(_mapper));
     }

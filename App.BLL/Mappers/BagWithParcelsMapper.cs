@@ -14,5 +14,7 @@ namespace App.BLL.Mappers
         public BagWithParcelsMapper(IMapper mapper) : base(mapper)
         {
         }
+
+
     }
 }

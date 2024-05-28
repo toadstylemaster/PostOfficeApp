@@ -49,6 +49,7 @@ namespace Base.BLL
 
         public TBllEntity Update(TBllEntity entity)
         {
+            var mappedEntity = Mapper.Map(entity)!;
             return Mapper.Map(Repository.Update(Mapper.Map(entity)!))!;
         }
 
@@ -60,6 +61,11 @@ namespace Base.BLL
         public async Task<TBllEntity?> RemoveAsync(TKey id, bool noTracking = true)
         {
             return Mapper.Map(await Repository.RemoveAsync(id, true));
+        }
+
+        public async Task<int> SaveChangesAsync()
+        {
+            return await Repository.SaveChangesAsync();
         }
     }
 }

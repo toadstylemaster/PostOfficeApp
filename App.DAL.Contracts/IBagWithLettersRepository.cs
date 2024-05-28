@@ -5,7 +5,14 @@ namespace App.DAL.Contracts
 {
     public interface IBagWithLettersRepository : IBaseRepository<BagWithLetters>, IBagWithLettersRepositoryCustom<BagWithLetters>
     {
-        Task<App.Domain.Shipment?> GetShipmentById(Guid? id);
+        Task<Shipment?> GetShipmentById(Guid? id);
+        void ModifyState(BagWithLetters bag);
+
+        Task<Shipment> FindShipment(Guid shipmentId);
+
+        Task<BagWithLetters> FindByBagNumber(string bagNumber);
+
+        void AddShipmentToBagWithLetters(BagWithLetters bag, Shipment shipment);
     }
 
     public interface IBagWithLettersRepositoryCustom<TEntity>

@@ -5,7 +5,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace App.BLL.DTO
 {
-    [NotMapped]
     public class Bag : DomainEntityId<Guid>, IDomainEntityId, IBag
     {
         [Required]

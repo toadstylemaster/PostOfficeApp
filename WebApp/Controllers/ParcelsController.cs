@@ -1,15 +1,11 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using App.DAL.EF;
 using App.BLL.Contracts;
-using Microsoft.AspNetCore.Authorization;
 using App.Public.DTO.v1;
 using Asp.Versioning;
+using AutoMapper;
+using App.Public.DTO.Mappers;
 
 namespace WebApp.Controllers
 {
@@ -19,10 +15,27 @@ namespace WebApp.Controllers
     public class ParcelsController : ControllerBase
     {
         private readonly IAppBLL _bll;
+        private readonly IMapper _mapper;
 
-        public ParcelsController(IAppBLL bll)
+        public ParcelsController(IAppBLL bll, IMapper mapper)
         {
             _bll = bll;
+            _mapper = mapper;
+        }
+
+        // GET: api/Parcels/5
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Parcel>> GetParcel(Guid id)
+        {
+            var _parcelMapper = new ParcelMapper(_mapper);
+            try
+            {
+                return _parcelMapper.Map(await _bll.Parcels.GetParcel(id))!;
+            }
+            catch (Exception ex)
+            {
+                return NotFound(ex.Message);
+            }
         }
 
         // POST: api/Parcels
@@ -33,15 +46,17 @@ namespace WebApp.Controllers
         /// <param name="parcel">Supply parcel entity you want to add to database</param>
         /// <returns>Status code 201</returns>
         [HttpPost]
+        [Route("")]
         [Produces("application/json")]
         [Consumes("application/json")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         public async Task<ActionResult<Parcel>> PostParcel(Parcel parcel)
         {
             var newParcel = new Parcel();
+            var _parcelMapper = new ParcelMapper(_mapper);
             try
             {
-                newParcel = _bll.Parcels.PostParcel(parcel);
+                newParcel = _parcelMapper.Map(_bll.Parcels.PostParcel(_parcelMapper.Map(parcel)!));
             }
             catch (ArgumentException ex)
             {
@@ -52,7 +67,7 @@ namespace WebApp.Controllers
             return CreatedAtAction("GetParcel",
                 new
                 {
-                    id = newParcel.Id,
+                    id = newParcel!.Id,
                     version = HttpContext.GetRequestedApiVersion()!.ToString()
                 },
                 newParcel);

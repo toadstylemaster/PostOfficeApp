@@ -14,6 +14,7 @@ namespace App.BLL.Mappers
     {
         public ShipmentMapper(IMapper mapper) : base(mapper)
         {
+
         }
     }
 }

@@ -3,6 +3,7 @@ using App.DAL.DTO;
 using App.DAL.EF.Mappers;
 using Base.DAL.EF;
 using Microsoft.EntityFrameworkCore;
+using NuGet.Protocol.Core.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,24 +14,34 @@ namespace App.DAL.EF.Repositories
 {
     public class BagWithParcelsRepository : EFBaseRepository<BagWithParcels, App.Domain.BagWithParcels, AppDbContext>, IBagWithParcelsRepository
     {
-        public BagWithParcelsRepository(AppDbContext dataContext, BagWithParcelsMapper mapper) : base(dataContext, mapper)
+        private readonly ShipmentMapper _shipmentMapper;
+        public BagWithParcelsRepository(AppDbContext dataContext, BagWithParcelsMapper mapper, ShipmentMapper shipmentMapper) : base(dataContext, mapper)
         {
+            _shipmentMapper = shipmentMapper;
         }
 
         public override async Task<IEnumerable<BagWithParcels>> AllAsync(bool noTracking = true)
         {
-            return (await RepositoryDbSet
+            return (await RepositoryDbSet.Include(p => p.ListOfParcels)
                 .ToListAsync()).Select(x => Mapper.Map(x)!);
         }
 
-        public Task<IEnumerable<BagWithParcels>> GetAllByNameAsync(string partialTitle, bool noTracking = true)
+
+        public void ModifyState(BagWithParcels bag)
         {
-            throw new NotImplementedException();
+            RepositoryDbSet.Entry(Mapper.Map(bag)!).State = EntityState.Detached;
         }
 
-        public async Task<App.Domain.Shipment?> GetShipmentById(Guid? id)
+        public async Task<BagWithParcels> FindByBagNumber(string bagNumber)
         {
-            return await RepositoryDbContext.Shipments.AsNoTracking().FirstOrDefaultAsync(s => s.Id == id);
+            return Mapper.Map(await RepositoryDbSet.AsNoTracking().FirstOrDefaultAsync(i => i.BagNumber.Equals(bagNumber)))!;
+        }
+
+        public void AddShipmentToBagWithParcels(BagWithParcels bag, Shipment shipment)
+        {
+            bag.Shipment = shipment;
+            bag.ShipmentId = shipment.Id;
+            RepositoryDbSet.Update(Mapper.Map(bag)!);
         }
 
         public override BagWithParcels Add(BagWithParcels bagWithParcels)
@@ -42,6 +53,13 @@ namespace App.DAL.EF.Repositories
                 return base.Add(bagWithParcels);
             }
             throw new ArgumentException("Bag with same bag number already exists!");
+        }
+
+        public async Task<Shipment> FindShipment(Guid id)
+        {
+            
+           return _shipmentMapper.Map(await RepositoryDbContext.Shipments.AsNoTracking().FirstOrDefaultAsync(i => i.Id == id))!;
+            
         }
     }
 }

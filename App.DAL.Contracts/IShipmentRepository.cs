@@ -11,7 +11,9 @@ namespace App.DAL.Contracts
 {
     public interface IShipmentRepository : IBaseRepository<Shipment>, IShipmentRepositoryCustom<Shipment>
     {
-        void RemoveBagsFromShipment(ICollection<Bag> bags);
+        void ModifyState(Shipment shipment);
+
+
     }
 
     public interface IShipmentRepositoryCustom<TEntity>

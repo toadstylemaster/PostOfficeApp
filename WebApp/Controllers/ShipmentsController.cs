@@ -3,9 +3,8 @@ using App.BLL.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using App.Public.DTO.v1;
 using Asp.Versioning;
-using Base.Contracts.Domain;
 using AutoMapper;
-using Base.Domain;
+using App.Public.DTO.Mappers;
 
 namespace WebApp.Controllers
 {
@@ -18,10 +17,12 @@ namespace WebApp.Controllers
     public class ShipmentsController : ControllerBase
     {
         private readonly IAppBLL _bll;
+        private readonly IMapper _mapper;
 
-        public ShipmentsController(IAppBLL bll)
+        public ShipmentsController(IAppBLL bll, IMapper mapper)
         {
             _bll = bll;
+            _mapper = mapper;
         }
 
         // GET: api/shipments
@@ -36,18 +37,18 @@ namespace WebApp.Controllers
         [HttpGet]
         public async Task<IEnumerable<Shipment>> GetShipments()
         {
-
-            return await _bll.Shipments.GetShipments();
+            var _shipmentMapper = new ShipmentMapper(_mapper);
+            return (await _bll.Shipments.GetShipments()).Select(x => _shipmentMapper.Map(x)!);
         }
 
         // GET: api/Shipments/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Shipment>> GetShipment(Guid id)
         {
+            var _shipmentMapper = new ShipmentMapper(_mapper);
             try
             {
-                var shipment = await _bll.Shipments.GetShipment(id);
-                return shipment;
+                return _shipmentMapper.Map(await _bll.Shipments.GetShipment(id))!;
             }
             catch(Exception ex) 
             {
@@ -64,7 +65,7 @@ namespace WebApp.Controllers
         /// <param name="id">Supply shipment entity id you want to change.</param>
         /// <param name="shipment">Supply shipment entity with updated values.</param>
         /// <returns>404 if shipment with given id is not found or 204, if changes were successful</returns>
-        [Route("~/{id}")]
+        [Route("{id}")]
         [HttpPut("{id}")]
         [Produces("application/json")]
         [Consumes("application/json")]
@@ -72,6 +73,7 @@ namespace WebApp.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> PutShipment(Guid id, App.Public.DTO.v1.Shipment shipment)
         {
+            var _shipmentMapper = new ShipmentMapper(_mapper);
             if (id != shipment.Id)
             {
                 return BadRequest();
@@ -79,7 +81,7 @@ namespace WebApp.Controllers
 
             try
             {
-                await _bll.Shipments.PutShipment(id, shipment);
+                await _bll.Shipments.PutShipment(id, _shipmentMapper.Map(shipment)!);
             }catch(ArgumentException ex) 
             {
                 return NotFound(ex.Message);    
@@ -102,8 +104,8 @@ namespace WebApp.Controllers
         /// <param name="id">Supply shipment entity id you want to change.</param>
         /// <param name="isFinalized">Boolean if shipment should be finalized.</param>
         /// <returns>404 if shipment with given id is not found or 204, if changes were successful</returns>
-        [Route("~/{id}/{isFinalized}")]
-        [HttpPut("{id}")]
+        [Route("{id}/{isFinalized}")]
+        [HttpPut("{id}/{isFinalized}")]
         [Produces("application/json")]
         [Consumes("application/json")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -131,17 +133,32 @@ namespace WebApp.Controllers
         /// <param name="id">Supply shipment entity id you want to change.</param>
         /// <param name="bags">Supply list of bags of bag entities you want to add to shipment entity.</param>
         /// <returns>404 if shipment with given id is not found or 204, if changes were successful</returns>
-        [Route("{id}/PutBags")]
-        [HttpPut("{id}")]
+        [Route("{id}/Bags")]
+        [HttpPut("{id}/Bags")]
         [Produces("application/json")]
         [Consumes("application/json")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> PutBagsShipment(Guid id, List<Bag> bags)
         {
+            var _bagMapper = new BagMapper(_mapper);
+            var _shipmentMapper = new ShipmentMapper(_mapper);
+
             try
             {
-                _bll.Shipments.PutBagsToShipment(id, bags);
+                var shipment = await _bll.Shipments.GetShipment(id);
+                if (shipment == null)
+                {
+                    return BadRequest("No shipment with such id!");
+                }
+
+                var finalList = (await _bll.BagWithLetters.GetBagWithLettersFromListOfBags(bags.Select(x => _bagMapper.Map(x)!).ToList(), shipment!)).ToList();
+                finalList.AddRange((await _bll.BagWithParcels.GetBagWithParcelsFromListOfBags(bags.Select(x => _bagMapper.Map(x)!).ToList(), shipment!)).ToList());
+
+                shipment.ListOfBags = finalList.ToList();
+                _bll.Shipments.ModifyState(shipment);
+                _bll.Shipments.Update(shipment);
+
             }
             catch (ArgumentException ex)
             {
@@ -152,6 +169,7 @@ namespace WebApp.Controllers
 
             return NoContent();
         }
+
 
         // POST: api/Shipments
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
@@ -166,10 +184,11 @@ namespace WebApp.Controllers
         [ProducesResponseType(StatusCodes.Status201Created)]
         public async Task<ActionResult<Shipment>> PostShipment(Shipment shipment)
         {
+            var _shipmentMapper = new ShipmentMapper(_mapper);
             var newShipment = new Shipment();
             try
             {
-                newShipment = _bll.Shipments.PostShipment(shipment);
+                newShipment = _shipmentMapper.Map(_bll.Shipments.PostShipment(_shipmentMapper.Map(shipment)!));
             }catch(ArgumentException ex)
             {
                 return BadRequest(ex.Message);
@@ -180,7 +199,7 @@ namespace WebApp.Controllers
             return CreatedAtAction("GetShipment", 
                 new 
                 {
-                id = newShipment.Id,
+                id = newShipment!.Id,
                 version = HttpContext.GetRequestedApiVersion()!.ToString()
                 },
                 newShipment);

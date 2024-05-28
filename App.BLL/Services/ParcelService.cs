@@ -17,71 +17,80 @@ namespace App.BLL.Services
         {
         }
 
-        public async Task<List<App.Public.DTO.v1.Parcel>?> GetParcelsByShipmentId(Guid? shipmentId)
+        public async Task<List<Parcel>?> GetParcelsByBagWithParcelsId(Guid bagWithParcelsId)
         {
-            if (shipmentId == null)
+            var bagWithParcels = await Repository.FindBagWithParcels(bagWithParcelsId);
+            if (bagWithParcels == null)
             {
-                return new List<App.Public.DTO.v1.Parcel>();
+                return new List<Parcel>();
             }
-            var validParcels = new List<App.Public.DTO.v1.Parcel>();
-            var shipment = await Repository.GetShipmentById(shipmentId);
-            var validBag = new App.Domain.BagWithParcels();
+            var validParcels = new List<Parcel>();
+            var validBag = new BagWithParcels();
 
-            if (shipment == null || shipment.ListOfBags == null)
+            if (bagWithParcels == null || bagWithParcels.ListOfParcels == null)
             {
                 return validParcels;
             }
 
-            foreach (var bag in shipment.ListOfBags)
-            {
-                if (bag.GetType() == typeof(App.Domain.BagWithParcels))
-                {
-                    validBag = (Domain.BagWithParcels)bag;
-                    if (validBag.ListOfParcels != null && validBag.ListOfParcels.Count > 0)
-                    {
-                        foreach (var parcel in validBag.ListOfParcels)
-                        {
-                            validParcels.Add(Map(parcel)!);
-                        }
-                    }
-                } 
-            }
-            
+
 
             return validParcels;
         }
 
-        public Public.DTO.v1.Parcel PostParcel(Public.DTO.v1.Parcel parcel)
+        public async Task<Parcel> GetParcel(Guid id)
         {
-            var parcelFromDb = new App.DAL.DTO.Parcel()
+            var parcel = await Repository.FindAsync(id, true);
+            if (parcel == null)
             {
-                Id = parcel.Id,
-                ParcelNumber = parcel.ParcelNumber,
-                RecipientName = parcel.RecipientName,
-                DestinationCountry = parcel.DestinationCountry,
-                Price = parcel.Price,
-                Weight = parcel.Weight,
-            };
+                throw new Exception("Cant find shipment with given id.");
+            }
 
-            if (parcelFromDb == null)
+            return Mapper.Map(parcel)!;
+        }
+
+        public async Task<IEnumerable<Parcel>> GetParcelsFromBagWithParcels(List<Parcel> parcels, BagWithParcels bagWithParcels)
+        {
+            if (parcels == null)
+            {
+                return new List<Parcel>();
+            }
+
+            foreach (var parcel in parcels)
+            {
+                if (parcel != null)
+                {
+                    var isAdded = await AddBagWithParcelsToParcel(parcel!, bagWithParcels);
+                    if (isAdded) { Repository.ModifyState(Mapper.Map(parcel)!); }
+                }
+            }
+            return parcels;
+        }
+
+        public async Task<bool> AddBagWithParcelsToParcel(Parcel parcel, BagWithParcels bag)
+        {
+            var existingBag = await Repository.FindBagWithParcels(bag.Id);
+            if (existingBag != null)
+            {
+                Repository.AddBagWithParcelsToParcel(Mapper.Map(parcel)!, existingBag);
+                return true;
+            }
+            else
+            {
+                throw new ArgumentException("Shipment with given Id was not found!");
+            }
+        }
+
+        public Parcel PostParcel(Parcel parcel)
+        {
+            if (parcel == null)
             {
                 throw new ArgumentNullException("Parcel is invalid!");
             }
-            var dalParcel = Repository.Add(parcelFromDb);
-            var dtoParcel = new App.Public.DTO.v1.Parcel()
-            {
-                Id = dalParcel.Id,
-                ParcelNumber = dalParcel.ParcelNumber,
-                RecipientName = dalParcel.RecipientName,
-                DestinationCountry = dalParcel.DestinationCountry,
-                Price = dalParcel.Price,
-                Weight = dalParcel.Weight,
-            };
+            return Mapper.Map(Repository.Add(Mapper.Map(parcel)!))!;
 
-            return dtoParcel;
         }
 
-        public async Task<bool> RemoveParcelsFromDb(List<App.Public.DTO.v1.Parcel>? parcels)
+        public async Task<bool> RemoveParcelsFromDb(List<Parcel>? parcels)
         {
             if(parcels == null)
             {
@@ -106,24 +115,6 @@ namespace App.BLL.Services
 
             await Repository.RemoveAsync(id, true);
             return true;
-        }
-
-
-        private App.Public.DTO.v1.Parcel? Map(App.Domain.Parcel? parcel)
-        {
-            if (parcel == null)
-            {
-                return null;
-            }
-            return new App.Public.DTO.v1.Parcel()
-            {
-                Id = parcel.Id,
-                ParcelNumber = parcel.ParcelNumber,
-                RecipientName = parcel.RecipientName,
-                DestinationCountry = parcel.DestinationCountry,
-                Price = parcel.Price,
-                Weight = parcel.Weight,
-            };
         }
 
     }

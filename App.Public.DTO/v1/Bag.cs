@@ -10,13 +10,9 @@ using System.Threading.Tasks;
 
 namespace App.Public.DTO.v1
 {
-    [NotMapped]
     public class Bag : DomainEntityId<Guid>, IDomainEntityId, IBag
     {
         public string BagNumber { get; set; } = default!;
 
-        public Guid? ShipmentId { get; set; }
-
-        public Shipment? Shipment { get; set; }
     }
 }

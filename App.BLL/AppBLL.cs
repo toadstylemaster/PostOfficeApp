@@ -38,11 +38,11 @@ namespace App.BLL
             return await Uow.SaveChangesAsync();
         }
 
-        public IShipmentService Shipments => _shipments ??= new ShipmentService(Uow.ShipmentRepository, new ShipmentMapper(_mapper));
+        public IShipmentService Shipments => _shipments ??= new ShipmentService(Uow.ShipmentRepository, new ShipmentMapper(_mapper), new BagMapper(_mapper));
 
         public IParcelService Parcels => _parcels ??= new ParcelService(Uow.ParcelRepository, new ParcelMapper(_mapper));
 
-        public IBagWithLettersService BagWithLetters => _bagWithLetters ??= new BagWithLettersService(Uow.BagWithLettersRepository, new BagWithLettersMapper(_mapper));
-        public IBagWithParcelsService BagWithParcels => _bagWithParcels ??= new BagWithParcelsService(Uow.BagWithParcelsRepository, new BagWithParcelsMapper(_mapper));
+        public IBagWithLettersService BagWithLetters => _bagWithLetters ??= new BagWithLettersService(Uow.BagWithLettersRepository, new BagWithLettersMapper(_mapper), new ShipmentMapper(_mapper));
+        public IBagWithParcelsService BagWithParcels => _bagWithParcels ??= new BagWithParcelsService(Uow.BagWithParcelsRepository, new BagWithParcelsMapper(_mapper), new ParcelMapper(_mapper));
     }
  }

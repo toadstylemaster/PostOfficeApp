@@ -9,8 +9,11 @@ using App.DAL.EF;
 using App.BLL.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using App.Public.DTO.v1;
-using Base.Domain;
 using Asp.Versioning;
+using AutoMapper;
+using App.Public.DTO.Mappers;
+using Base.Contracts.Base;
+using NuGet.Protocol.Core.Types;
 
 namespace WebApp.Controllers
 {
@@ -20,10 +23,12 @@ namespace WebApp.Controllers
     public class BagWithParcelsController : ControllerBase
     {
         private readonly IAppBLL _bll;
+        private readonly IMapper _mapper;
 
-        public BagWithParcelsController(IAppBLL bll)
+        public BagWithParcelsController(IAppBLL bll, IMapper mapper)
         {
             _bll = bll;
+            _mapper = mapper;
         }
 
         /// <summary>
@@ -37,22 +42,24 @@ namespace WebApp.Controllers
         [HttpGet]
         public async Task<IEnumerable<BagWithParcels>> GetBagWithParcels()
         {
-            return await _bll.BagWithParcels.GetBagWithParcels();
+            var _bagMapper = new BagWithParcelsMapper(_mapper);
+            return (await _bll.BagWithParcels.GetBagWithParcels()).Select(x => _bagMapper.Map(x)!);
         }
 
         /// <summary>
         /// Get all bagWithParcels entities that are linked with given shipment entity.
         /// </summary>
         /// <returns>List of all Letters</returns>
-        [Route("/{Id}/byShipments")]
+        [Route("{Id}/byShipments")]
         [Produces("application/json")]
         [Consumes("application/json")]
         [ProducesResponseType(typeof(IEnumerable<App.Public.DTO.v1.BagWithParcels>), 200)]
         [AllowAnonymous]
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<BagWithParcels>>> GetBagWithParcelsByShipment(Guid shipmentId)
+        public async Task<ActionResult<IEnumerable<App.Public.DTO.v1.BagWithParcels>>> GetBagWithParcelsByShipment(Guid shipmentId)
         {
-            return (await _bll.BagWithParcels.GetBagWithParcelsByShipmentId(shipmentId)).ToList();
+            var _bagMapper = new BagWithParcelsMapper(_mapper);
+            return (await _bll.BagWithParcels.GetBagWithParcelsByShipmentId(shipmentId)).Select(x => _bagMapper.Map(x)!).ToList();
         }
 
         // PUT: api/Shipments/5/PutBags
@@ -63,17 +70,28 @@ namespace WebApp.Controllers
         /// <param name="id">Supply bagWithParcels entity id you want to change.</param>
         /// <param name="parcels">Supply list of parcel entities you want to add to bagWithParcels entity.</param>
         /// <returns>404 if shipment with given id is not found or 204, if changes were successful</returns>
-        [Route("~/{id}/PutParcels")]
-        [HttpPut("{id}")]
+        [Route("~/{id}/Parcels")]
+        [HttpPut("{id}/Parcels")]
         [Produces("application/json")]
         [Consumes("application/json")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> PutParcelsBag(Guid id, List<Parcel> parcels)
         {
+            var _parcelMapper = new ParcelMapper(_mapper);
+            var _bagWithParcelsMapper = new BagWithParcelsMapper(_mapper);
             try
             {
-                _bll.BagWithParcels.PutParcelsToBag(id, parcels);
+                var bagWithParcels = await _bll.BagWithParcels.FindAsync(id, true);
+                if (bagWithParcels == null)
+                {
+                    return BadRequest("No bag with parcels with such id!");
+                }
+                var finalList = (await _bll.Parcels.GetParcelsFromBagWithParcels(parcels.Select(x => _parcelMapper.Map(x)!).ToList(), bagWithParcels!)).ToList();
+
+                bagWithParcels.ListOfParcels = parcels.Select(x => _parcelMapper.Map(x)!).ToList();
+                _bll.BagWithParcels.ModifyState(bagWithParcels!);
+                _bll.BagWithParcels.Update(bagWithParcels);
             }
             catch (ArgumentException ex)
             {
@@ -99,10 +117,11 @@ namespace WebApp.Controllers
         [ProducesResponseType(StatusCodes.Status201Created)]
         public async Task<ActionResult<BagWithParcels>> PostBagWithParcels(BagWithParcels bagWithParcels)
         {
+            var _bagMapper = new BagWithParcelsMapper(_mapper);
             var newBagWithParcels = new BagWithParcels();
             try
             {
-                newBagWithParcels = _bll.BagWithParcels.PostBagWithParcels(bagWithParcels);
+                newBagWithParcels = _bagMapper.Map(_bll.BagWithParcels.PostBagWithParcels(_bagMapper.Map(bagWithParcels)!));
             }
             catch (ArgumentException ex)
             {
@@ -114,7 +133,7 @@ namespace WebApp.Controllers
             return CreatedAtAction("GetBagWithParcels",
                 new
                 {
-                    id = newBagWithParcels.Id,
+                    id = newBagWithParcels!.Id,
                     version = HttpContext.GetRequestedApiVersion()!.ToString()
                 },
                 newBagWithParcels);

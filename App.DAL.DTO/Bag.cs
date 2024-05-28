@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 
 namespace App.DAL.DTO
 {
-    [NotMapped]
     public class Bag : DomainEntityId<Guid>, IDomainEntityId, IBag
     {
         [Required]

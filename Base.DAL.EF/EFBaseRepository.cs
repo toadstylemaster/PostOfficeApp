@@ -2,6 +2,7 @@
 using Base.Contracts.DAL;
 using Base.Contracts.Domain;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Collections.Generic;
 
 namespace Base.DAL.EF
@@ -36,8 +37,6 @@ namespace Base.DAL.EF
 
         protected virtual IQueryable<TDomainEntity> CreateQuery(bool noTracking = true)
         {
-            // TODO: entity ownership control
-
             var query = RepositoryDbSet.AsQueryable();
             if (noTracking)
             {
@@ -65,8 +64,18 @@ namespace Base.DAL.EF
 
         public virtual TDalEntity Update(TDalEntity entity)
         {
-            return Mapper.Map(RepositoryDbSet.Update(Mapper.Map(entity)!).Entity)!;
+            var mappedEntity = Mapper.Map(entity)!;
+
+            var existingEntity = RepositoryDbSet
+                .FirstOrDefault(entry => entry.Id.Equals(mappedEntity.Id));
+            if (existingEntity != null)
+            {
+                RepositoryDbSet.Entry(existingEntity).State = EntityState.Detached;
+            }
+
+            return Mapper.Map(RepositoryDbSet.Update(mappedEntity).Entity)!;
         }
+
 
         public virtual TDalEntity Remove(TDalEntity entity)
         {
@@ -95,6 +104,11 @@ namespace Base.DAL.EF
         public virtual TDalEntity? Find(TKey id)
         {
             return Mapper.Map(RepositoryDbSet.Find(id));
+        }
+
+        public async Task<int> SaveChangesAsync()
+        {
+            return await RepositoryDbContext.SaveChangesAsync();
         }
     }
 }

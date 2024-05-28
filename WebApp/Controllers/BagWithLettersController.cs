@@ -10,6 +10,8 @@ using App.BLL.Contracts;
 using Microsoft.AspNetCore.Authorization;
 using App.Public.DTO.v1;
 using Asp.Versioning;
+using App.Public.DTO.Mappers;
+using AutoMapper;
 
 namespace WebApp.Controllers
 {
@@ -19,10 +21,12 @@ namespace WebApp.Controllers
     public class BagWithLettersController : ControllerBase
     {
         private readonly IAppBLL _bll;
+        private readonly IMapper _mapper;
 
-        public BagWithLettersController(IAppBLL bll)
+        public BagWithLettersController(IAppBLL bll, IMapper mapper)
         {
             _bll = bll;
+            _mapper = mapper;
         }
 
         /// <summary>
@@ -43,7 +47,7 @@ namespace WebApp.Controllers
         /// Get all bagWithLetters entities that are linked to given shipment entity.
         /// </summary>
         /// <returns>List of all Letters</returns>
-        [Route("{shipmentId}")]
+        [Route("{Id}/byShipments")]
         [Produces("application/json")]
         [Consumes("application/json")]
         [ProducesResponseType(typeof(IEnumerable<App.Public.DTO.v1.BagWithLetters>), 200)]
@@ -51,7 +55,8 @@ namespace WebApp.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<BagWithLetters>>> GetBagWithLettersByShipment(Guid shipmentId)
         {
-            return (await _bll.BagWithLetters.GetBagWithLettersByShipmentId(shipmentId)).ToList();
+            var _bagMapper = new BagWithLettersMapper(_mapper);
+            return (await _bll.BagWithLetters.GetBagWithLettersByShipmentId(shipmentId)).Select(x => _bagMapper.Map(x)!).ToList();
         }
 
         // POST: api/BagWithLetters
@@ -67,10 +72,11 @@ namespace WebApp.Controllers
         [ProducesResponseType(StatusCodes.Status201Created)]
         public async Task<ActionResult<BagWithLetters>> PostBagWithLetters(BagWithLetters bagWithLetters)
         {
+            var _bagMapper = new BagWithLettersMapper(_mapper);
             var newBagWithLetters = new BagWithLetters();
             try
             {
-                newBagWithLetters = _bll.BagWithLetters.PostBagWithLetters(bagWithLetters);
+                newBagWithLetters = _bagMapper.Map(_bll.BagWithLetters.PostBagWithLetters(_bagMapper.Map(bagWithLetters)!));
             }
             catch (ArgumentException ex)
             {
@@ -81,7 +87,7 @@ namespace WebApp.Controllers
             return CreatedAtAction("GetBagWithLetters",
                 new
                 {
-                    id = newBagWithLetters.Id,
+                    id = newBagWithLetters!.Id,
                     version = HttpContext.GetRequestedApiVersion()!.ToString()
                 },
                 newBagWithLetters);
