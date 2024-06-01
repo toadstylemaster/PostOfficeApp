@@ -2,7 +2,7 @@
 
 namespace App.DAL.Contracts
 {
-    public interface IAppUOW: IBaseUOW
+    public interface IAppUOW : IBaseUOW
     {
         IParcelRepository ParcelRepository { get; }
         IBagWithLettersRepository BagWithLettersRepository { get; }

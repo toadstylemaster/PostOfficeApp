@@ -2,8 +2,6 @@
 using Base.Contracts.DAL;
 using Base.Contracts.Domain;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
 
 namespace Base.DAL.EF
 {
@@ -66,11 +64,11 @@ namespace Base.DAL.EF
         {
             var mappedEntity = Mapper.Map(entity)!;
 
-            var existingEntity = RepositoryDbSet
+            var existingEntity = RepositoryDbSet.AsNoTracking()
                 .FirstOrDefault(entry => entry.Id.Equals(mappedEntity.Id));
             if (existingEntity != null)
             {
-                RepositoryDbSet.Entry(existingEntity).State = EntityState.Detached;
+                RepositoryDbSet.Entry(existingEntity).State = EntityState.Unchanged;
             }
 
             return Mapper.Map(RepositoryDbSet.Update(mappedEntity).Entity)!;
@@ -91,7 +89,7 @@ namespace Base.DAL.EF
 
         public virtual IEnumerable<TDalEntity> All()
         {
-            var x = RepositoryDbSet.ToList();
+            var x = RepositoryDbSet.AsNoTracking().ToList();
             var list = new List<TDalEntity>();
             foreach (var entity in x)
             {
@@ -104,11 +102,6 @@ namespace Base.DAL.EF
         public virtual TDalEntity? Find(TKey id)
         {
             return Mapper.Map(RepositoryDbSet.Find(id));
-        }
-
-        public async Task<int> SaveChangesAsync()
-        {
-            return await RepositoryDbContext.SaveChangesAsync();
         }
     }
 }

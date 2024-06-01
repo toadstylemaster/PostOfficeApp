@@ -1,17 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using App.DAL.EF;
 using App.BLL.Contracts;
-using Microsoft.AspNetCore.Authorization;
+using App.Public.DTO.Mappers;
 using App.Public.DTO.v1;
 using Asp.Versioning;
-using App.Public.DTO.Mappers;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace WebApp.Controllers
 {
@@ -47,7 +40,7 @@ namespace WebApp.Controllers
         /// Get all bagWithLetters entities that are linked to given shipment entity.
         /// </summary>
         /// <returns>List of all Letters</returns>
-        [Route("{Id}/byShipments")]
+        [Route("Bags/byShipments")]
         [Produces("application/json")]
         [Consumes("application/json")]
         [ProducesResponseType(typeof(IEnumerable<App.Public.DTO.v1.BagWithLetters>), 200)]
@@ -56,7 +49,22 @@ namespace WebApp.Controllers
         public async Task<ActionResult<IEnumerable<BagWithLetters>>> GetBagWithLettersByShipment(Guid shipmentId)
         {
             var _bagMapper = new BagWithLettersMapper(_mapper);
-            return (await _bll.BagWithLetters.GetBagWithLettersByShipmentId(shipmentId)).Select(x => _bagMapper.Map(x)!).ToList();
+            return (await _bll.BagWithLetters.GetBagWithLettersByShipmentId(shipmentId)).Select(x => _bagMapper.Map(x)!).ToList() ?? new List<BagWithLetters>();
+        }
+
+        // GET: api/BagWithLetters/5
+        [HttpGet("{id}")]
+        public async Task<ActionResult<BagWithLetters>> GetBagWithLettersById(Guid id)
+        {
+            var _bagWithLettersMapper = new BagWithLettersMapper(_mapper);
+            try
+            {
+                return _bagWithLettersMapper.Map(await _bll.BagWithLetters.FindAsync(id, true))!;
+            }
+            catch (Exception ex)
+            {
+                return NotFound(ex.Message);
+            }
         }
 
         // POST: api/BagWithLetters
@@ -84,7 +92,7 @@ namespace WebApp.Controllers
             }
             await _bll.SaveChangesAsync();
 
-            return CreatedAtAction("GetBagWithLetters",
+            return CreatedAtAction("GetBagWithLettersById",
                 new
                 {
                     id = newBagWithLetters!.Id,

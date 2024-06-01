@@ -2,11 +2,10 @@
 using Base.Helpers;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
-using System.Runtime.CompilerServices;
 
 namespace App.Domain
 {
-    public class Parcel: DomainEntityId
+    public class Parcel : DomainEntityId
     {
         [Required]
         [DisplayName("Parcel number")]
@@ -19,7 +18,7 @@ namespace App.Domain
 
         [Required]
         [RegularExpression(@"^[A-Z]{2}$", ErrorMessage = "Destination country must be a 2-letter code, only uppercase characters are allowed!")]
-        public string DestinationCountry { get; set;} = default!;
+        public string DestinationCountry { get; set; } = default!;
 
 
         [Required]

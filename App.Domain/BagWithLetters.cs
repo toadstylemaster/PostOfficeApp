@@ -1,14 +1,10 @@
-﻿using Base.Contracts.Domain;
-using Base.Domain;
-using Base.Helpers;
-using System;
-using System.Collections.Generic;
+﻿using Base.Helpers;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
 namespace App.Domain
 {
-    
+
     public class BagWithLetters : Bag
     {
         [Required]

@@ -1,10 +1,5 @@
 ﻿using Base.Contracts.DAL;
 using Base.Contracts.Domain;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Base.Contracts.BLL
 {

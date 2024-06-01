@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Base.DAL.EF
+﻿namespace Base.DAL.EF
 {
     using Base.Contracts.DAL;
     using Microsoft.EntityFrameworkCore;

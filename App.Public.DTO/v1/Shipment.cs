@@ -1,5 +1,4 @@
 ﻿using Base.Domain;
-using App.Domain;
 
 namespace App.Public.DTO.v1
 {

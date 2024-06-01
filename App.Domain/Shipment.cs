@@ -1,12 +1,11 @@
 ﻿using Base.Domain;
 using Base.Helpers;
-using System;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
 namespace App.Domain
 {
-    public class Shipment: DomainEntityId
+    public class Shipment : DomainEntityId
     {
         [Required]
         [DisplayName("Shipment number")]

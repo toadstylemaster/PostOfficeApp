@@ -1,10 +1,5 @@
 ﻿using App.DAL.DTO;
 using Base.Contracts.DAL;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace App.DAL.Contracts
 {
@@ -12,10 +7,13 @@ namespace App.DAL.Contracts
     {
         void ModifyState(BagWithParcels bag);
 
-        Task<BagWithParcels> FindByBagNumber(string bagNumber);
+        Task<BagWithParcels?> FindByBagNumber(string bagNumber);
 
         Task<Shipment> FindShipment(Guid shipmentId);
+
         void AddShipmentToBagWithParcels(BagWithParcels bag, Shipment shipment);
+
+        Task<IEnumerable<Bag>> GetBagWithParcelsAsBags();
     }
 
     public interface IBagWithParcelsRepositoryCustom<TEntity>

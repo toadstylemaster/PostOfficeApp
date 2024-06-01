@@ -6,7 +6,7 @@ using Base.DAL.EF;
 
 namespace App.DAL.EF
 {
-    public class AppUOW: EFBaseUOW<AppDbContext>, IAppUOW
+    public class AppUOW : EFBaseUOW<AppDbContext>, IAppUOW
     {
         private readonly IMapper _mapper;
 
@@ -25,7 +25,7 @@ namespace App.DAL.EF
 
         public IParcelRepository ParcelRepository => _parcels ??= new ParcelRepository(UowDbContext, new ParcelMapper(_mapper), new BagWithParcelsMapper(_mapper));
 
-        public IBagWithLettersRepository BagWithLettersRepository => _bagWithLetters ??= new BagWithLettersRepository(UowDbContext, new BagWithLettersMapper(_mapper), new ShipmentMapper(_mapper));
+        public IBagWithLettersRepository BagWithLettersRepository => _bagWithLetters ??= new BagWithLettersRepository(UowDbContext, new BagWithLettersMapper(_mapper), new ShipmentMapper(_mapper), new BagMapper(_mapper));
 
         public IBagWithParcelsRepository BagWithParcelsRepository => _bagWithParcels ??= new BagWithParcelsRepository(UowDbContext, new BagWithParcelsMapper(_mapper), new ShipmentMapper(_mapper));
 

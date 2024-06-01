@@ -1,14 +1,9 @@
-using App.BLL.Contracts;
 using App.BLL;
+using App.BLL.Contracts;
 using App.DAL.Contracts;
 using App.DAL.EF;
 using App.DAL.EF.Seeding;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using System;
-using Microsoft.Extensions.Options;
-using Swashbuckle.AspNetCore.SwaggerGen;
-using WebApp;
 
 var builder = WebApplication.CreateBuilder(args);
 

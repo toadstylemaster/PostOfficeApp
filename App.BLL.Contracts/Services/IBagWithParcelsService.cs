@@ -8,7 +8,7 @@ namespace App.BLL.Contracts.Services
     {
         Task<IEnumerable<BagWithParcels>> GetBagWithParcelsByShipmentId(Guid shipmentId);
 
-        Task<IEnumerable<Bag>> GetBagWithParcelsFromListOfBags(List<Bag> bags, Shipment shipment);
+        Task<IEnumerable<Bag>> AddBagWithParcelsToShipment(List<Bag> bags, Shipment shipmentId);
         Task<IEnumerable<BagWithParcels>> GetBagWithParcels();
 
         BagWithParcels PostBagWithParcels(BagWithParcels bagWithParcels);
@@ -18,5 +18,7 @@ namespace App.BLL.Contracts.Services
         Task<bool> RemoveBagsWithParcelsFromDb(List<BagWithParcels>? bags);
 
         void ModifyState(BagWithParcels bagWithParcels);
+
+        Task<IEnumerable<Bag>> GetAllBagWithParcelsAsBags();
     }
 }

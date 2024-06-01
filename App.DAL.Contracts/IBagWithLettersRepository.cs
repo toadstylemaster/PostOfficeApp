@@ -10,9 +10,11 @@ namespace App.DAL.Contracts
 
         Task<Shipment> FindShipment(Guid shipmentId);
 
-        Task<BagWithLetters> FindByBagNumber(string bagNumber);
+        Task<BagWithLetters?> FindByBagNumber(string bagNumber);
 
         void AddShipmentToBagWithLetters(BagWithLetters bag, Shipment shipment);
+
+        Task<IEnumerable<Bag>> GetBagWithLettersAsBags();
     }
 
     public interface IBagWithLettersRepositoryCustom<TEntity>

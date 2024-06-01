@@ -3,22 +3,19 @@ using App.BLL.DTO;
 using App.BLL.Mappers;
 using App.DAL.Contracts;
 using Base.BLL;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace App.BLL.Services
 {
     public class BagWithLettersService : BaseEntityService<BagWithLetters, DAL.DTO.BagWithLetters, IBagWithLettersRepository>, IBagWithLettersService
     {
         private readonly ShipmentMapper _shipmentMapper;
+        private readonly BagMapper _bagMapper;
 
-        public BagWithLettersService(IBagWithLettersRepository repository, BagWithLettersMapper mapper, ShipmentMapper shipmentMapper)
+        public BagWithLettersService(IBagWithLettersRepository repository, BagWithLettersMapper mapper, ShipmentMapper shipmentMapper, BagMapper bagMapper)
             : base(repository, mapper)
         {
             _shipmentMapper = shipmentMapper;
+            _bagMapper = bagMapper;
         }
 
         public async Task<bool> RemoveBagWithLettersFromDB(Guid id)
@@ -34,12 +31,14 @@ namespace App.BLL.Services
         }
 
 
-        public async Task<IEnumerable<Bag>> GetBagWithLettersFromListOfBags(List<Bag> bags, Shipment shipment)
+        public async Task<IEnumerable<Bag>> AddBagWithLettersToShipment(List<Bag> bags, Shipment shipment)
         {
-            if (bags == null)
+            var finalBags = new List<Bag>();
+            if (bags == null || shipment == null)
             {
-                return new List<Bag>();
+                return finalBags;
             }
+
 
             foreach (var bag in bags)
             {
@@ -48,26 +47,23 @@ namespace App.BLL.Services
                 {
                     if (Mapper.Map(bagWithLetters) is BagWithLetters)
                     {
-                        var isAdded = await AddShipmentToBagWithLetters(Mapper.Map(bagWithLetters)!, shipment);
-                        if (isAdded) { Repository.ModifyState(bagWithLetters); }
+                        finalBags.Add(Mapper.Map(bagWithLetters)!);
+                        AddShipmentToBagWithLetters(Mapper.Map(bagWithLetters)!, shipment);
                     }
                 }
             }
-            return bags;
+            return finalBags;
         }
 
-        public async Task<bool> AddShipmentToBagWithLetters(BagWithLetters bag, App.BLL.DTO.Shipment shipment)
+        public async Task<IEnumerable<Bag>> GetAllBagWithLettersAsBags()
         {
-            var existingShipment = await Repository.FindShipment(shipment.Id);
-            if (existingShipment != null)
-            {
-                Repository.AddShipmentToBagWithLetters(Mapper.Map(bag)!, existingShipment);
-                return true;
-            }
-            else
-            {
-                throw new ArgumentException("Shipment with given Id was not found!");
-            }
+            return (await Repository.GetBagWithLettersAsBags()).Select(p => _bagMapper.Map(p)!);
+        }
+
+        public bool AddShipmentToBagWithLetters(BagWithLetters bag, Shipment shipment)
+        {
+            Repository.AddShipmentToBagWithLetters(Mapper.Map(bag)!, _shipmentMapper.Map(shipment)!);
+            return true;
         }
 
 
@@ -117,22 +113,8 @@ namespace App.BLL.Services
                 throw new ArgumentNullException("Bag with letters is invalid!");
             }
             return Mapper.Map(Repository.Add(Mapper.Map(bagWithLetters)!))!;
-           
+
         }
 
-        public async Task<bool> RemoveBagsWithLettersFromDB(List<BagWithLetters>? bags)
-        {
-            if (bags == null)
-            {
-                return false;
-            }
-            var bagCount = bags.Count;
-
-            for (int i = bagCount - 1; i >= 0; i--)
-            {
-                await Repository.RemoveAsync(bags.ElementAt(i).Id, true);
-            }
-            return true;
-        }       
-    } 
+    }
 }

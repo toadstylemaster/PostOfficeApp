@@ -3,18 +3,15 @@ using App.BLL.DTO;
 using App.BLL.Mappers;
 using App.DAL.Contracts;
 using Base.BLL;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace App.BLL.Services
 {
     public class ParcelService : BaseEntityService<Parcel, DAL.DTO.Parcel, IParcelRepository>, IParcelService
     {
-        public ParcelService(IParcelRepository repository, ParcelMapper mapper) : base(repository, mapper)
+        private readonly BagWithParcelsMapper _bagWithParcelsMapper;
+        public ParcelService(IParcelRepository repository, ParcelMapper mapper, BagWithParcelsMapper bagWithParcelsMapper) : base(repository, mapper)
         {
+            _bagWithParcelsMapper = bagWithParcelsMapper;
         }
 
         public async Task<List<Parcel>?> GetParcelsByBagWithParcelsId(Guid bagWithParcelsId)
@@ -48,7 +45,7 @@ namespace App.BLL.Services
             return Mapper.Map(parcel)!;
         }
 
-        public async Task<IEnumerable<Parcel>> GetParcelsFromBagWithParcels(List<Parcel> parcels, BagWithParcels bagWithParcels)
+        public IEnumerable<Parcel> PutParcelsToBagWithParcels(List<Parcel> parcels, BagWithParcels bagWithParcels)
         {
             if (parcels == null)
             {
@@ -57,27 +54,16 @@ namespace App.BLL.Services
 
             foreach (var parcel in parcels)
             {
-                if (parcel != null)
-                {
-                    var isAdded = await AddBagWithParcelsToParcel(parcel!, bagWithParcels);
-                    if (isAdded) { Repository.ModifyState(Mapper.Map(parcel)!); }
-                }
+                AddBagWithParcelsToParcel(parcel!, bagWithParcels);
+
             }
             return parcels;
         }
 
-        public async Task<bool> AddBagWithParcelsToParcel(Parcel parcel, BagWithParcels bag)
+        public bool AddBagWithParcelsToParcel(Parcel parcel, BagWithParcels bag)
         {
-            var existingBag = await Repository.FindBagWithParcels(bag.Id);
-            if (existingBag != null)
-            {
-                Repository.AddBagWithParcelsToParcel(Mapper.Map(parcel)!, existingBag);
-                return true;
-            }
-            else
-            {
-                throw new ArgumentException("Shipment with given Id was not found!");
-            }
+            Repository.AddBagWithParcelsToParcel(Mapper.Map(parcel)!, _bagWithParcelsMapper.Map(bag)!);
+            return true;
         }
 
         public Parcel PostParcel(Parcel parcel)
@@ -90,19 +76,22 @@ namespace App.BLL.Services
 
         }
 
-        public async Task<bool> RemoveParcelsFromDb(List<Parcel>? parcels)
+        public async Task<IEnumerable<Parcel>> GetParcels()
         {
-            if(parcels == null)
-            {
-                return false;
-            }
-            var parcelCount = parcels.Count;
-
-            for (int i = parcelCount - 1; i >= 0; i--)
-            {
-                await Repository.RemoveAsync(parcels.ElementAt(i).Id, true);
-            }
-            return true;
+            var res = (await Repository.AllAsync(true))
+                .Select(x => new Parcel()
+                {
+                    Id = x.Id,
+                    ParcelNumber = x.ParcelNumber,
+                    RecipientName = x.RecipientName,
+                    DestinationCountry = x.DestinationCountry,
+                    Price = x.Price,
+                    Weight = x.Weight,
+                    BagWithParcelsId = x.BagWithParcelsId,
+                    BagWithParcels = _bagWithParcelsMapper.Map(x.BagWithParcels)
+                })
+                .ToList();
+            return res;
         }
 
         public async Task<bool> RemoveParcelFromDb(Guid id)

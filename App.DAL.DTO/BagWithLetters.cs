@@ -1,6 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Base.Helpers;
 using System.ComponentModel;
-using Base.Helpers;
+using System.ComponentModel.DataAnnotations;
 
 namespace App.DAL.DTO
 {

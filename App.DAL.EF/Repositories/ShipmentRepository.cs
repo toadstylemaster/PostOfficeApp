@@ -1,16 +1,8 @@
 ﻿using App.DAL.Contracts;
 using App.DAL.DTO;
 using App.DAL.EF.Mappers;
-using Base.Contracts.Domain;
 using Base.DAL.EF;
-using Base.Domain;
-using Microsoft.CodeAnalysis.FlowAnalysis;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace App.DAL.EF.Repositories
 {
@@ -27,6 +19,16 @@ namespace App.DAL.EF.Repositories
                 .ToListAsync()).Select(x => Mapper.Map(x)!);
         }
 
+        public override Shipment Add(Shipment entity)
+        {
+            var shipment = RepositoryDbSet.Any(x => x.ShipmentNumber == entity.ShipmentNumber);
+            if (!shipment)
+            {
+                return base.Add(entity);
+            }
+            throw new ArgumentException("Shipment with same shipment number already exists!");
+        }
+
         public override async Task<Shipment?> FindAsync(Guid id, bool noTracking = true)
         {
             return Mapper.Map(await RepositoryDbSet.Include(b => b.ListOfBags).AsNoTracking().FirstOrDefaultAsync(x => x.Id == id));
@@ -34,7 +36,7 @@ namespace App.DAL.EF.Repositories
 
         public void ModifyState(Shipment shipment)
         {
-            RepositoryDbSet.Entry(Mapper.Map(shipment)!).State = EntityState.Detached;
+            RepositoryDbSet.Entry(Mapper.Map(shipment)!).State = EntityState.Modified;
         }
 
     }

@@ -3,21 +3,19 @@ using App.BLL.DTO;
 using App.BLL.Mappers;
 using App.DAL.Contracts;
 using Base.BLL;
-using Base.Domain;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace App.BLL.Services
 {
     public class BagWithParcelsService : BaseEntityService<BagWithParcels, DAL.DTO.BagWithParcels, IBagWithParcelsRepository>, IBagWithParcelsService
     {
         private readonly ParcelMapper _parcelMapper;
-        public BagWithParcelsService(IBagWithParcelsRepository repository, BagWithParcelsMapper mapper, ParcelMapper parcelMapper) : base(repository, mapper)
+        private readonly ShipmentMapper _shipmentMapper;
+        private readonly BagMapper _bagMapper;
+        public BagWithParcelsService(IBagWithParcelsRepository repository, BagWithParcelsMapper mapper, ParcelMapper parcelMapper, ShipmentMapper shipmentMapper, BagMapper bagMapper) : base(repository, mapper)
         {
             _parcelMapper = parcelMapper;
+            _shipmentMapper = shipmentMapper;
+            _bagMapper = bagMapper;
         }
 
         public async Task<IEnumerable<BagWithParcels>> GetBagWithParcels()
@@ -41,13 +39,13 @@ namespace App.BLL.Services
                 return new List<BagWithParcels>();
             }
             var validBagWithParcels = new List<BagWithParcels>();
-            
-            if(shipment == null || shipment.ListOfBags == null)
+
+            if (shipment == null || shipment.ListOfBags == null)
             {
                 return validBagWithParcels;
             }
             var validBag = new BagWithParcels();
-            foreach(var item in shipment.ListOfBags)
+            foreach (var item in shipment.ListOfBags)
             {
                 validBag = Mapper.Map(await Repository.FindByBagNumber(item.BagNumber));
                 if (validBag != null)
@@ -59,10 +57,15 @@ namespace App.BLL.Services
             return validBagWithParcels;
         }
 
-        public async Task<IEnumerable<Bag>> GetBagWithParcelsFromListOfBags(List<Bag> bags, Shipment shipment)
+        public async Task<IEnumerable<Bag>> GetAllBagWithParcelsAsBags()
+        {
+            return (await Repository.GetBagWithParcelsAsBags()).Select(p => _bagMapper.Map(p)!);
+        }
+
+        public async Task<IEnumerable<Bag>> AddBagWithParcelsToShipment(List<Bag> bags, Shipment shipment)
         {
             var finalBags = new List<Bag>();
-            if (bags == null)
+            if (bags == null || shipment == null)
             {
                 return finalBags.AsEnumerable();
             }
@@ -75,8 +78,7 @@ namespace App.BLL.Services
                     if (Mapper.Map(bagWithParcels) is BagWithParcels)
                     {
                         finalBags.Add(Mapper.Map(bagWithParcels)!);
-                        await AddShipmentToBagWithParcels(Mapper.Map(bagWithParcels)!, shipment);
-                        Repository.ModifyState(bagWithParcels);
+                        AddShipmentToBagWithParcels(Mapper.Map(bagWithParcels)!, shipment);
                     }
                 }
 
@@ -89,18 +91,10 @@ namespace App.BLL.Services
             Repository.ModifyState(Mapper.Map(bagWithParcels)!);
         }
 
-        public async Task<bool> AddShipmentToBagWithParcels(App.BLL.DTO.BagWithParcels bag, App.BLL.DTO.Shipment shipment)
+        public bool AddShipmentToBagWithParcels(App.BLL.DTO.BagWithParcels bag, Shipment shipment)
         {
-            var existingShipment = await Repository.FindShipment(shipment.Id);
-            if (existingShipment != null)
-            {
-                Repository.AddShipmentToBagWithParcels(Mapper.Map(bag)!, existingShipment);
-                return true;
-            }
-            else
-            {
-                throw new ArgumentException("Shipment with given Id was not found!");
-            }
+            Repository.AddShipmentToBagWithParcels(Mapper.Map(bag)!, _shipmentMapper.Map(shipment)!);
+            return true;
         }
 
         public BagWithParcels PostBagWithParcels(BagWithParcels bagWithParcels)
@@ -120,8 +114,6 @@ namespace App.BLL.Services
 
         }
 
-
-
         public async Task<bool> RemoveBagWithParcelsFromDb(Guid id)
         {
             var bagWithParcels = await Repository.FindAsync(id, true);
@@ -133,21 +125,5 @@ namespace App.BLL.Services
             await Repository.RemoveAsync(id, true);
             return true;
         }
-
-        public async Task<bool> RemoveBagsWithParcelsFromDb(List<BagWithParcels>? bags)
-        {
-            if (bags == null)
-            {
-                return false;
-            }
-            var bagCount = bags.Count;
-
-            for (int i = bagCount - 1; i >= 0; i--)
-            {
-                await Repository.RemoveAsync(bags.ElementAt(i).Id, true);
-            }
-            return true;
-        }
-
     }
 }

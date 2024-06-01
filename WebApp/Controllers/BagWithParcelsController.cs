@@ -1,19 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using App.DAL.EF;
 using App.BLL.Contracts;
-using Microsoft.AspNetCore.Authorization;
+using App.Public.DTO.Mappers;
 using App.Public.DTO.v1;
 using Asp.Versioning;
 using AutoMapper;
-using App.Public.DTO.Mappers;
-using Base.Contracts.Base;
-using NuGet.Protocol.Core.Types;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace WebApp.Controllers
 {
@@ -46,11 +37,26 @@ namespace WebApp.Controllers
             return (await _bll.BagWithParcels.GetBagWithParcels()).Select(x => _bagMapper.Map(x)!);
         }
 
+        // GET: api/BagWithParcels/5
+        [HttpGet("{id}")]
+        public async Task<ActionResult<BagWithParcels>> GetBagWithParcelsById(Guid id)
+        {
+            var _bagWithParcelsMapper = new BagWithParcelsMapper(_mapper);
+            try
+            {
+                return _bagWithParcelsMapper.Map(await _bll.BagWithParcels.FindAsync(id, true))!;
+            }
+            catch (Exception ex)
+            {
+                return NotFound(ex.Message);
+            }
+        }
+
         /// <summary>
         /// Get all bagWithParcels entities that are linked with given shipment entity.
         /// </summary>
         /// <returns>List of all Letters</returns>
-        [Route("{Id}/byShipments")]
+        [Route("Bags/byShipments")]
         [Produces("application/json")]
         [Consumes("application/json")]
         [ProducesResponseType(typeof(IEnumerable<App.Public.DTO.v1.BagWithParcels>), 200)]
@@ -59,7 +65,7 @@ namespace WebApp.Controllers
         public async Task<ActionResult<IEnumerable<App.Public.DTO.v1.BagWithParcels>>> GetBagWithParcelsByShipment(Guid shipmentId)
         {
             var _bagMapper = new BagWithParcelsMapper(_mapper);
-            return (await _bll.BagWithParcels.GetBagWithParcelsByShipmentId(shipmentId)).Select(x => _bagMapper.Map(x)!).ToList();
+            return (await _bll.BagWithParcels.GetBagWithParcelsByShipmentId(shipmentId)).Select(x => _bagMapper.Map(x)!).ToList() ?? new List<BagWithParcels>();
         }
 
         // PUT: api/Shipments/5/PutBags
@@ -70,28 +76,32 @@ namespace WebApp.Controllers
         /// <param name="id">Supply bagWithParcels entity id you want to change.</param>
         /// <param name="parcels">Supply list of parcel entities you want to add to bagWithParcels entity.</param>
         /// <returns>404 if shipment with given id is not found or 204, if changes were successful</returns>
-        [Route("~/{id}/Parcels")]
+        [Route("{id}/Parcels")]
         [HttpPut("{id}/Parcels")]
         [Produces("application/json")]
         [Consumes("application/json")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> PutParcelsBag(Guid id, List<Parcel> parcels)
+        public async Task<IActionResult> PutParcelsToBag(Guid id, List<Parcel> parcels)
         {
             var _parcelMapper = new ParcelMapper(_mapper);
             var _bagWithParcelsMapper = new BagWithParcelsMapper(_mapper);
             try
             {
                 var bagWithParcels = await _bll.BagWithParcels.FindAsync(id, true);
-                if (bagWithParcels == null)
+                if (bagWithParcels == null || bagWithParcels.ShipmentId == null)
                 {
                     return BadRequest("No bag with parcels with such id!");
                 }
-                var finalList = (await _bll.Parcels.GetParcelsFromBagWithParcels(parcels.Select(x => _parcelMapper.Map(x)!).ToList(), bagWithParcels!)).ToList();
+                var shipment = await _bll.Shipments.FindAsync((Guid)bagWithParcels.ShipmentId, true);
+                if (shipment != null && shipment.IsFinalized)
+                {
+                    return BadRequest("No bag with parcels with such id!");
+                }
 
-                bagWithParcels.ListOfParcels = parcels.Select(x => _parcelMapper.Map(x)!).ToList();
-                _bll.BagWithParcels.ModifyState(bagWithParcels!);
-                _bll.BagWithParcels.Update(bagWithParcels);
+                var finalList = _bll.Parcels.PutParcelsToBagWithParcels(parcels.Select(x => _parcelMapper.Map(x)!).ToList(), bagWithParcels!);
+
+                bagWithParcels.ListOfParcels = finalList.ToList();
             }
             catch (ArgumentException ex)
             {
@@ -130,7 +140,7 @@ namespace WebApp.Controllers
 
             await _bll.SaveChangesAsync();
 
-            return CreatedAtAction("GetBagWithParcels",
+            return CreatedAtAction("GetBagWithParcelsById",
                 new
                 {
                     id = newBagWithParcels!.Id,
@@ -147,11 +157,12 @@ namespace WebApp.Controllers
             {
                 await _bll.BagWithParcels.RemoveBagWithParcelsFromDb(id);
 
-            }catch(ArgumentException ex)
+            }
+            catch (ArgumentException ex)
             {
                 return NotFound(ex.Message);
             }
-            
+
             await _bll.SaveChangesAsync();
 
             return NoContent();

@@ -1,8 +1,7 @@
 ﻿using Base.Domain;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel;
-using App.Domain;
 using Base.Helpers;
+using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 
 namespace App.DAL.DTO
 {

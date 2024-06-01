@@ -1,6 +1,6 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Base.Domain;
 using System.ComponentModel;
-using Base.Domain;
+using System.ComponentModel.DataAnnotations;
 
 namespace App.BLL.DTO
 {

@@ -1,9 +1,7 @@
-﻿using App.BLL.Contracts;
-using App.BLL.Contracts.Services;
+﻿using App.BLL.Contracts.Services;
 using App.BLL.DTO;
 using App.BLL.Mappers;
 using App.DAL.Contracts;
-using AutoMapper;
 using Base.BLL;
 
 namespace App.BLL.Services
@@ -20,7 +18,7 @@ namespace App.BLL.Services
         public async Task<bool> DeleteShipmentFromDb(Guid shipmentId)
         {
             var shipment = await Repository.FindAsync(shipmentId, true);
-            if(shipment == null)
+            if (shipment == null)
             {
                 throw new ArgumentException("Shipment with given id does not exist!");
             }
@@ -59,7 +57,7 @@ namespace App.BLL.Services
 
         public Shipment PostShipment(Shipment shipment)
         {
-            if(shipment == null) 
+            if (shipment == null)
             {
                 throw new ArgumentNullException("Shipment is invalid!");
             }
@@ -71,41 +69,15 @@ namespace App.BLL.Services
             Repository.ModifyState(Mapper.Map(shipment)!);
         }
 
-        public async Task<bool> PutShipment(Guid id, Shipment shipment)
-        {
-            var shipmentFromDb = await Repository.FindAsync(id, true);
-            if (shipmentFromDb == null)
-            {
-                throw new ArgumentException("Shipment with that id does not exist!");
-            }
-            if (shipmentFromDb.IsFinalized == true) { throw new InvalidOperationException("Shipment is already finalized!"); }
-
-            shipmentFromDb.ShipmentNumber = shipment.ShipmentNumber;
-            shipmentFromDb.Airport = shipment.Airport;
-            shipmentFromDb.FlightNumber = shipment.FlightNumber;
-            shipmentFromDb.FlightDate = shipment.FlightDate;
-            shipmentFromDb.ListOfBags = shipment.ListOfBags?.Select(x => _bagMapper.Map(x)!).ToList();
-            shipmentFromDb.IsFinalized = shipment.IsFinalized;
-
-
-            Repository.Update(shipmentFromDb);
-            return true;
-        }
-
-        public async Task<bool> PutShipment(Guid id, bool isFinalized)
+        public async Task<bool> FinalizeShipment(Guid id)
         {
             var shipmentFromDb = await Repository.FindAsync(id, true);
             if (shipmentFromDb == null)
             {
                 throw new ArgumentException("Shipment with given id not found");
             }
-            if (isFinalized)
-            {
-                shipmentFromDb.IsFinalized = true;
-            }
-
-            Repository.Update(shipmentFromDb);
-
+            shipmentFromDb.IsFinalized = true;
+            ModifyState(Mapper.Map(shipmentFromDb)!);
             return true;
         }
 

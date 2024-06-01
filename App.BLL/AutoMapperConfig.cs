@@ -1,7 +1,5 @@
 ﻿using App.BLL.DTO;
 using AutoMapper;
-using System.Diagnostics;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace App.BLL
 {

@@ -9,13 +9,12 @@ namespace App.BLL.Contracts.Services
         Task<IEnumerable<Shipment>> GetShipments();
 
         Task<Shipment> GetShipment(Guid id);
-        Task<bool> PutShipment(Guid id, Shipment shipment);
-        Task<bool> PutShipment(Guid id, bool isFinalized);
+        Task<bool> FinalizeShipment(Guid id);
 
         void ModifyState(Shipment shipment);
         Shipment PostShipment(Shipment shipment);
 
         Task<bool> DeleteShipmentFromDb(Guid shipmentId);
-        
+
     }
 }

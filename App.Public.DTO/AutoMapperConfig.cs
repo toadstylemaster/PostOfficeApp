@@ -1,6 +1,5 @@
 ﻿using App.BLL.DTO;
 using AutoMapper;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace App.Public.DTO
 {

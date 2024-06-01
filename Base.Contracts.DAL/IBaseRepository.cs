@@ -23,7 +23,5 @@
         TEntity Remove(TEntity entity);
 
         Task<TEntity?> RemoveAsync(TKey id, bool noTracking = true);
-
-        Task<int> SaveChangesAsync();
     }
 }

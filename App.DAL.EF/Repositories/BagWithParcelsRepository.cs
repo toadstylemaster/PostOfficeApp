@@ -3,12 +3,6 @@ using App.DAL.DTO;
 using App.DAL.EF.Mappers;
 using Base.DAL.EF;
 using Microsoft.EntityFrameworkCore;
-using NuGet.Protocol.Core.Types;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace App.DAL.EF.Repositories
 {
@@ -27,21 +21,43 @@ namespace App.DAL.EF.Repositories
         }
 
 
+
         public void ModifyState(BagWithParcels bag)
         {
-            RepositoryDbSet.Entry(Mapper.Map(bag)!).State = EntityState.Detached;
+            RepositoryDbSet.Entry(Mapper.Map(bag)!).State = EntityState.Modified;
         }
 
-        public async Task<BagWithParcels> FindByBagNumber(string bagNumber)
+        public async Task<BagWithParcels?> FindByBagNumber(string bagNumber)
         {
-            return Mapper.Map(await RepositoryDbSet.AsNoTracking().FirstOrDefaultAsync(i => i.BagNumber.Equals(bagNumber)))!;
+            var bag = await RepositoryDbSet.Include(p => p.ListOfParcels).AsNoTracking().FirstOrDefaultAsync(i => i.BagNumber.Equals(bagNumber));
+            if (bag is Domain.BagWithParcels bagWithParcels)
+            {
+                return Mapper.Map(bagWithParcels)!;
+            }
+            return null;
+
+        }
+
+        public async Task<IEnumerable<Bag>> GetBagWithParcelsAsBags()
+        {
+            var bags = await RepositoryDbSet
+                .Select(b => new Bag
+                {
+                    BagNumber = b.BagNumber,
+                    Id = b.Id,
+                    ShipmentId = b.ShipmentId
+                })
+                .ToListAsync();
+
+            return bags.AsEnumerable();
         }
 
         public void AddShipmentToBagWithParcels(BagWithParcels bag, Shipment shipment)
         {
-            bag.Shipment = shipment;
             bag.ShipmentId = shipment.Id;
-            RepositoryDbSet.Update(Mapper.Map(bag)!);
+            bag.Shipment = shipment;
+            ModifyState(bag);
+
         }
 
         public override BagWithParcels Add(BagWithParcels bagWithParcels)
@@ -57,9 +73,9 @@ namespace App.DAL.EF.Repositories
 
         public async Task<Shipment> FindShipment(Guid id)
         {
-            
-           return _shipmentMapper.Map(await RepositoryDbContext.Shipments.AsNoTracking().FirstOrDefaultAsync(i => i.Id == id))!;
-            
+
+            return _shipmentMapper.Map(await RepositoryDbContext.Shipments.Include(b => b.ListOfBags).AsNoTracking().FirstOrDefaultAsync(i => i.Id == id))!;
+
         }
     }
 }

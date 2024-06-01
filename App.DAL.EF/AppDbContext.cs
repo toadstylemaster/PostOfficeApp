@@ -2,7 +2,6 @@
 {
     using App.Domain;
     using Microsoft.EntityFrameworkCore;
-    using System.Reflection.Emit;
 
 
     public class AppDbContext : DbContext
@@ -14,8 +13,8 @@
 
         public DbSet<Parcel> Parcels { get; set; } = default!;
         public DbSet<BagWithLetters> BagWithLetters { get; set; } = default!;
-        public DbSet<BagWithParcels> BagWithParcels{ get; set; } = default!;
-        public DbSet<Shipment> Shipments{ get; set; } = default!;
+        public DbSet<BagWithParcels> BagWithParcels { get; set; } = default!;
+        public DbSet<Shipment> Shipments { get; set; } = default!;
 
         protected override void OnModelCreating(ModelBuilder builder)
         {

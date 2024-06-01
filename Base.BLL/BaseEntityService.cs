@@ -62,10 +62,5 @@ namespace Base.BLL
         {
             return Mapper.Map(await Repository.RemoveAsync(id, true));
         }
-
-        public async Task<int> SaveChangesAsync()
-        {
-            return await Repository.SaveChangesAsync();
-        }
     }
 }

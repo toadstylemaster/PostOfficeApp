@@ -1,14 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore.ChangeTracking;
+﻿using App.Domain;
 using Microsoft.EntityFrameworkCore;
-using NuGet.Protocol;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using App.Domain;
-using Base.Domain;
-using Base.Contracts.Domain;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace App.DAL.EF.Seeding
 {
@@ -41,15 +33,15 @@ namespace App.DAL.EF.Seeding
                 Weight = 13,
                 Price = 2
             });
-        }        
-        
+        }
+
         public static async Task<EntityEntry<BagWithParcels>> SeedAppDataBagWithParcels(AppDbContext context, Parcel parcel)
         {
 
             return await context.BagWithParcels.AddAsync(new BagWithParcels
             {
                 BagNumber = "ADBCEFG",
-                ListOfParcels = new List<Parcel>{ parcel }
+                ListOfParcels = new List<Parcel> { parcel }
             });
         }
 

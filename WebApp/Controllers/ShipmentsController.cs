@@ -1,10 +1,10 @@
-using Microsoft.AspNetCore.Mvc;
 using App.BLL.Contracts;
-using Microsoft.AspNetCore.Authorization;
+using App.Public.DTO.Mappers;
 using App.Public.DTO.v1;
 using Asp.Versioning;
 using AutoMapper;
-using App.Public.DTO.Mappers;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace WebApp.Controllers
 {
@@ -50,50 +50,37 @@ namespace WebApp.Controllers
             {
                 return _shipmentMapper.Map(await _bll.Shipments.GetShipment(id))!;
             }
-            catch(Exception ex) 
+            catch (Exception ex)
             {
                 return NotFound(ex.Message);
             }
 
         }
 
-        // PUT: api/Shipments/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        // GET: api/shipments/Bags
         /// <summary>
-        /// Update shipment entity with list of bags. Find entity via parameter id and update it with list of bag numbers
+        /// Get all bag entities.
         /// </summary>
-        /// <param name="id">Supply shipment entity id you want to change.</param>
-        /// <param name="shipment">Supply shipment entity with updated values.</param>
-        /// <returns>404 if shipment with given id is not found or 204, if changes were successful</returns>
-        [Route("{id}")]
-        [HttpPut("{id}")]
+        /// <returns>List of all bags</returns>
         [Produces("application/json")]
         [Consumes("application/json")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> PutShipment(Guid id, App.Public.DTO.v1.Shipment shipment)
+        [ProducesResponseType(typeof(IEnumerable<App.Public.DTO.v1.Bag>), 200)]
+        [Route("Bags/GetBags")]
+        [HttpGet("Bags/GetBags")]
+        public async Task<IEnumerable<Bag>> GetBags()
         {
-            var _shipmentMapper = new ShipmentMapper(_mapper);
-            if (id != shipment.Id)
-            {
-                return BadRequest();
-            }
+            var _bagMapper = new BagMapper(_mapper);
 
             try
             {
-                await _bll.Shipments.PutShipment(id, _shipmentMapper.Map(shipment)!);
-            }catch(ArgumentException ex) 
-            {
-                return NotFound(ex.Message);    
+                var finalList = (await _bll.BagWithLetters.GetAllBagWithLettersAsBags()).Select(b => _bagMapper.Map(b)!).ToList();
+                finalList.AddRange((await _bll.BagWithParcels.GetAllBagWithParcelsAsBags()).Select(b => _bagMapper.Map(b)!));
+                return finalList;
             }
-            catch (InvalidOperationException ex) 
+            catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                throw new Exception(ex.Message + "afdjksaljfdsalkjkfldsajklfjsdlkfsjadklfsdajklf");
             }
-
-            await _bll.SaveChangesAsync();
-
-            return NoContent();
         }
 
         // PUT: api/Shipments/5/true
@@ -102,20 +89,20 @@ namespace WebApp.Controllers
         /// Update shipment entity with list of bags. Find entity via parameter id and update it with list of bag numbers
         /// </summary>
         /// <param name="id">Supply shipment entity id you want to change.</param>
-        /// <param name="isFinalized">Boolean if shipment should be finalized.</param>
         /// <returns>404 if shipment with given id is not found or 204, if changes were successful</returns>
-        [Route("{id}/{isFinalized}")]
-        [HttpPut("{id}/{isFinalized}")]
+        [Route("finalize/{id}")]
+        [HttpPut("finalize/{id}")]
         [Produces("application/json")]
         [Consumes("application/json")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> PutShipment(Guid id, bool isFinalized)
+        public async Task<IActionResult> FinalizeShipment(Guid id)
         {
             try
             {
-                await _bll.Shipments.PutShipment(id, isFinalized);
-            }catch (ArgumentException ex)
+                await _bll.Shipments.FinalizeShipment(id);
+            }
+            catch (ArgumentException ex)
             {
                 return NotFound(ex.Message);
             }
@@ -125,7 +112,7 @@ namespace WebApp.Controllers
             return NoContent();
         }
 
-        // PUT: api/Shipments/5/PutBags
+        // PUT: api/Shipments/5/Bags
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         /// <summary>
         /// Update shipment entity with list of bags. Find entity via parameter id and update it with list of bags
@@ -139,7 +126,7 @@ namespace WebApp.Controllers
         [Consumes("application/json")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> PutBagsShipment(Guid id, List<Bag> bags)
+        public async Task<IActionResult> PutBagsToShipment(Guid id, [FromBody] List<Bag> bags)
         {
             var _bagMapper = new BagMapper(_mapper);
             var _shipmentMapper = new ShipmentMapper(_mapper);
@@ -147,17 +134,15 @@ namespace WebApp.Controllers
             try
             {
                 var shipment = await _bll.Shipments.GetShipment(id);
-                if (shipment == null)
+                if (shipment == null || shipment.IsFinalized)
                 {
-                    return BadRequest("No shipment with such id!");
+                    return BadRequest("No shipment with such id or shipment has already been finalized!");
                 }
 
-                var finalList = (await _bll.BagWithLetters.GetBagWithLettersFromListOfBags(bags.Select(x => _bagMapper.Map(x)!).ToList(), shipment!)).ToList();
-                finalList.AddRange((await _bll.BagWithParcels.GetBagWithParcelsFromListOfBags(bags.Select(x => _bagMapper.Map(x)!).ToList(), shipment!)).ToList());
+                var finalList = (await _bll.BagWithLetters.AddBagWithLettersToShipment(bags.Select(x => _bagMapper.Map(x)!).ToList(), shipment)).ToList();
+                finalList.AddRange((await _bll.BagWithParcels.AddBagWithParcelsToShipment(bags.Select(x => _bagMapper.Map(x)!).ToList(), shipment)).ToList());
 
                 shipment.ListOfBags = finalList.ToList();
-                _bll.Shipments.ModifyState(shipment);
-                _bll.Shipments.Update(shipment);
 
             }
             catch (ArgumentException ex)
@@ -189,18 +174,19 @@ namespace WebApp.Controllers
             try
             {
                 newShipment = _shipmentMapper.Map(_bll.Shipments.PostShipment(_shipmentMapper.Map(shipment)!));
-            }catch(ArgumentException ex)
+            }
+            catch (ArgumentException ex)
             {
                 return BadRequest(ex.Message);
             }
-            
+
             await _bll.SaveChangesAsync();
 
-            return CreatedAtAction("GetShipment", 
-                new 
+            return CreatedAtAction("GetShipment",
+                new
                 {
-                id = newShipment!.Id,
-                version = HttpContext.GetRequestedApiVersion()!.ToString()
+                    id = newShipment!.Id,
+                    version = HttpContext.GetRequestedApiVersion()!.ToString()
                 },
                 newShipment);
         }
@@ -215,7 +201,8 @@ namespace WebApp.Controllers
                 await _bll.Shipments.DeleteShipmentFromDb(id);
 
             }
-            catch(ArgumentException ex) {
+            catch (ArgumentException ex)
+            {
 
                 return NotFound(ex.Message);
             }

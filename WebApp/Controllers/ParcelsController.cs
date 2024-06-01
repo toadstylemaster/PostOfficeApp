@@ -1,11 +1,10 @@
-using System;
-using System.Collections.Generic;
-using Microsoft.AspNetCore.Mvc;
 using App.BLL.Contracts;
+using App.Public.DTO.Mappers;
 using App.Public.DTO.v1;
 using Asp.Versioning;
 using AutoMapper;
-using App.Public.DTO.Mappers;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace WebApp.Controllers
 {
@@ -21,6 +20,21 @@ namespace WebApp.Controllers
         {
             _bll = bll;
             _mapper = mapper;
+        }
+
+        /// <summary>
+        /// Get all Parcel entities.
+        /// </summary>
+        /// <returns>List of all parcels</returns>
+        [Produces("application/json")]
+        [Consumes("application/json")]
+        [ProducesResponseType(typeof(IEnumerable<App.Public.DTO.v1.Parcel>), 200)]
+        [AllowAnonymous]
+        [HttpGet]
+        public async Task<IEnumerable<Parcel>> GetParcels()
+        {
+            var _parcelMapper = new ParcelMapper(_mapper);
+            return (await _bll.Parcels.GetParcels()).Select(x => _parcelMapper.Map(x)!);
         }
 
         // GET: api/Parcels/5
