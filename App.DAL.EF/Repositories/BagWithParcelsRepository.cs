@@ -20,8 +20,6 @@ namespace App.DAL.EF.Repositories
                 .ToListAsync()).Select(x => Mapper.Map(x)!);
         }
 
-
-
         public void ModifyState(BagWithParcels bag)
         {
             RepositoryDbSet.Entry(Mapper.Map(bag)!).State = EntityState.Modified;

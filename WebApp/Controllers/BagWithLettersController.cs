@@ -25,7 +25,7 @@ namespace WebApp.Controllers
         /// <summary>
         /// Get all bagWithLetters entities.
         /// </summary>
-        /// <returns>List of all Letters</returns>
+        /// <returns>List of all BagWithLetters</returns>
         [Produces("application/json")]
         [Consumes("application/json")]
         [ProducesResponseType(typeof(IEnumerable<App.Public.DTO.v1.BagWithLetters>), 200)]
@@ -72,7 +72,7 @@ namespace WebApp.Controllers
         /// <summary>
         /// Create a new bagWithLetters entity. Add it to database.
         /// </summary>
-        /// <param name="bagWithLetters">Supply bagWithParces entity you want to add to database</param>
+        /// <param name="bagWithLetters">Supply bagWithLetters entity you want to add to database</param>
         /// <returns>Status code 201</returns>
         [HttpPost]
         [Produces("application/json")]

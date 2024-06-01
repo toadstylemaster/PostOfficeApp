@@ -61,7 +61,7 @@ namespace WebApp.Controllers
         /// <summary>
         /// Get all bag entities.
         /// </summary>
-        /// <returns>List of all bags</returns>
+        /// <returns>Returns list of all bags</returns>
         [Produces("application/json")]
         [Consumes("application/json")]
         [ProducesResponseType(typeof(IEnumerable<App.Public.DTO.v1.Bag>), 200)]
@@ -88,7 +88,7 @@ namespace WebApp.Controllers
         /// <summary>
         /// Update shipment entity with list of bags. Find entity via parameter id and update it with list of bag numbers
         /// </summary>
-        /// <param name="id">Supply shipment entity id you want to change.</param>
+        /// <param name="id">Supply shipment entity id you want to finalize.</param>
         /// <returns>404 if shipment with given id is not found or 204, if changes were successful</returns>
         [Route("finalize/{id}")]
         [HttpPut("finalize/{id}")]
@@ -117,9 +117,9 @@ namespace WebApp.Controllers
         /// <summary>
         /// Update shipment entity with list of bags. Find entity via parameter id and update it with list of bags
         /// </summary>
-        /// <param name="id">Supply shipment entity id you want to change.</param>
+        /// <param name="id">Supply shipment entity id you want to add bags to.</param>
         /// <param name="bags">Supply list of bags of bag entities you want to add to shipment entity.</param>
-        /// <returns>404 if shipment with given id is not found or 204, if changes were successful</returns>
+        /// <returns>404 if shipment with given id is not found or finalized. 204, if changes were successful</returns>
         [Route("{id}/Bags")]
         [HttpPut("{id}/Bags")]
         [Produces("application/json")]
@@ -199,16 +199,13 @@ namespace WebApp.Controllers
             try
             {
                 await _bll.Shipments.DeleteShipmentFromDb(id);
-
             }
             catch (ArgumentException ex)
             {
-
                 return NotFound(ex.Message);
             }
 
             await _bll.SaveChangesAsync();
-
 
             return NoContent();
         }

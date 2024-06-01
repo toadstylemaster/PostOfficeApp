@@ -14,26 +14,6 @@ namespace App.BLL.Services
             _bagWithParcelsMapper = bagWithParcelsMapper;
         }
 
-        public async Task<List<Parcel>?> GetParcelsByBagWithParcelsId(Guid bagWithParcelsId)
-        {
-            var bagWithParcels = await Repository.FindBagWithParcels(bagWithParcelsId);
-            if (bagWithParcels == null)
-            {
-                return new List<Parcel>();
-            }
-            var validParcels = new List<Parcel>();
-            var validBag = new BagWithParcels();
-
-            if (bagWithParcels == null || bagWithParcels.ListOfParcels == null)
-            {
-                return validParcels;
-            }
-
-
-
-            return validParcels;
-        }
-
         public async Task<Parcel> GetParcel(Guid id)
         {
             var parcel = await Repository.FindAsync(id, true);
@@ -45,19 +25,25 @@ namespace App.BLL.Services
             return Mapper.Map(parcel)!;
         }
 
-        public IEnumerable<Parcel> PutParcelsToBagWithParcels(List<Parcel> parcels, BagWithParcels bagWithParcels)
+        public async Task<IEnumerable<Parcel>> PutParcelsToBagWithParcels(List<Parcel> parcels, BagWithParcels bagWithParcels)
         {
+            var finalBags = new List<Parcel>();
             if (parcels == null)
             {
-                return new List<Parcel>();
+                return finalBags;
             }
 
             foreach (var parcel in parcels)
             {
-                AddBagWithParcelsToParcel(parcel!, bagWithParcels);
+                var newParcel = await Repository.FindAsync(parcel.Id, true);
+                if(newParcel != null)
+                {
+                    finalBags.Add(parcel);
+                    AddBagWithParcelsToParcel(parcel!, bagWithParcels);
+                }
 
             }
-            return parcels;
+            return finalBags;
         }
 
         public bool AddBagWithParcelsToParcel(Parcel parcel, BagWithParcels bag)

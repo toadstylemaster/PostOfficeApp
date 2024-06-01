@@ -20,7 +20,7 @@ namespace App.DAL.EF.Repositories
         }
         public override async Task<IEnumerable<Parcel>> AllAsync(bool noTracking = true)
         {
-            return (await RepositoryDbSet
+            return (await RepositoryDbSet.AsNoTracking()
                 .ToListAsync()).Select(x => Mapper.Map(x)!);
         }
 

@@ -15,10 +15,6 @@ namespace App.BLL.Contracts.Services
 
         Task<bool> RemoveBagWithParcelsFromDb(Guid id);
 
-        Task<bool> RemoveBagsWithParcelsFromDb(List<BagWithParcels>? bags);
-
-        void ModifyState(BagWithParcels bagWithParcels);
-
         Task<IEnumerable<Bag>> GetAllBagWithParcelsAsBags();
     }
 }

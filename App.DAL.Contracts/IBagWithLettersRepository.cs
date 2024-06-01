@@ -5,7 +5,6 @@ namespace App.DAL.Contracts
 {
     public interface IBagWithLettersRepository : IBaseRepository<BagWithLetters>, IBagWithLettersRepositoryCustom<BagWithLetters>
     {
-        Task<Shipment?> GetShipmentById(Guid? id);
         void ModifyState(BagWithLetters bag);
 
         Task<Shipment> FindShipment(Guid shipmentId);

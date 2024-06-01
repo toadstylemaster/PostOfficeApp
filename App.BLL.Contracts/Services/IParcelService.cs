@@ -6,9 +6,8 @@ namespace App.BLL.Contracts.Services
 {
     public interface IParcelService : IEntityService<Parcel>, IParcelRepositoryCustom<Parcel>
     {
-        Task<List<Parcel>?> GetParcelsByBagWithParcelsId(Guid shipmentId);
 
-        IEnumerable<Parcel> PutParcelsToBagWithParcels(List<Parcel> parcels, BagWithParcels bagWithParcels);
+        Task<IEnumerable<Parcel>> PutParcelsToBagWithParcels(List<Parcel> parcels, BagWithParcels bagWithParcels);
 
         Task<Parcel> GetParcel(Guid id);
 

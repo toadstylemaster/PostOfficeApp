@@ -52,7 +52,6 @@ namespace Tests.WebApp.Controllers
                 IsFinalized = false,
             };
             var newShipment = _service.PostShipment(shipment);
-            Console.WriteLine(shipment.ShipmentNumber);
 
             await _ctx.SaveChangesAsync();
 

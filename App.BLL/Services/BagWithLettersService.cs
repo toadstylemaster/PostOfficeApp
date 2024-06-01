@@ -55,15 +55,15 @@ namespace App.BLL.Services
             return finalBags;
         }
 
-        public async Task<IEnumerable<Bag>> GetAllBagWithLettersAsBags()
-        {
-            return (await Repository.GetBagWithLettersAsBags()).Select(p => _bagMapper.Map(p)!);
-        }
-
         public bool AddShipmentToBagWithLetters(BagWithLetters bag, Shipment shipment)
         {
             Repository.AddShipmentToBagWithLetters(Mapper.Map(bag)!, _shipmentMapper.Map(shipment)!);
             return true;
+        }
+
+        public async Task<IEnumerable<Bag>> GetAllBagWithLettersAsBags()
+        {
+            return (await Repository.GetBagWithLettersAsBags()).Select(p => _bagMapper.Map(p)!);
         }
 
 

@@ -22,11 +22,6 @@ namespace App.DAL.EF.Repositories
                 .ToListAsync()).Select(x => Mapper.Map(x)!);
         }
 
-        public async Task<Shipment?> GetShipmentById(Guid? id)
-        {
-            return _shipmentMapper.Map(await RepositoryDbContext.Shipments.Include(b => b.ListOfBags).AsNoTracking().FirstOrDefaultAsync(s => s.Id == id));
-        }
-
         public override BagWithLetters Add(BagWithLetters bagWithLetters)
         {
             var bag = RepositoryDbContext.BagWithLetters.Any(x => x.BagNumber == bagWithLetters.BagNumber);

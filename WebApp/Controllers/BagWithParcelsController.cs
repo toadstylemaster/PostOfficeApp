@@ -55,7 +55,7 @@ namespace WebApp.Controllers
         /// <summary>
         /// Get all bagWithParcels entities that are linked with given shipment entity.
         /// </summary>
-        /// <returns>List of all Letters</returns>
+        /// <returns>List of all Parcels that are linked with given shipment</returns>
         [Route("Bags/byShipments")]
         [Produces("application/json")]
         [Consumes("application/json")]
@@ -71,7 +71,7 @@ namespace WebApp.Controllers
         // PUT: api/Shipments/5/PutBags
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         /// <summary>
-        /// Update bagWithParcels with parcels. Find entity via parameter id and update it with 
+        /// Update bagWithParcels with parcels. Find entity via parameter id and update it with.
         /// </summary>
         /// <param name="id">Supply bagWithParcels entity id you want to change.</param>
         /// <param name="parcels">Supply list of parcel entities you want to add to bagWithParcels entity.</param>
@@ -99,7 +99,7 @@ namespace WebApp.Controllers
                     return BadRequest("No bag with parcels with such id!");
                 }
 
-                var finalList = _bll.Parcels.PutParcelsToBagWithParcels(parcels.Select(x => _parcelMapper.Map(x)!).ToList(), bagWithParcels!);
+                var finalList = await _bll.Parcels.PutParcelsToBagWithParcels(parcels.Select(x => _parcelMapper.Map(x)!).ToList(), bagWithParcels!);
 
                 bagWithParcels.ListOfParcels = finalList.ToList();
             }
@@ -119,7 +119,7 @@ namespace WebApp.Controllers
         /// <summary>
         /// Create a new bagWithParcels entity. Add it to database.
         /// </summary>
-        /// <param name="bagWithParcels">Supply bagWithParces entity you want to add to database</param>
+        /// <param name="bagWithParcels">Supply bagWithParcels entity you want to add to database</param>
         /// <returns>Status code 201</returns>
         [HttpPost]
         [Produces("application/json")]

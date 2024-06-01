@@ -86,11 +86,6 @@ namespace App.BLL.Services
             return finalBags;
         }
 
-        public void ModifyState(BagWithParcels bagWithParcels)
-        {
-            Repository.ModifyState(Mapper.Map(bagWithParcels)!);
-        }
-
         public bool AddShipmentToBagWithParcels(App.BLL.DTO.BagWithParcels bag, Shipment shipment)
         {
             Repository.AddShipmentToBagWithParcels(Mapper.Map(bag)!, _shipmentMapper.Map(shipment)!);
